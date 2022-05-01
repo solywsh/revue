@@ -2,12 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/thedevsaddam/gojsonq"
 )
 
 type config struct {
-	urlHeader string
+	urlHeader   string
+	adminUser   []string
+	listenGroup []string
 }
 
 type yamlDecoder struct {
@@ -18,7 +21,8 @@ var yamlPath = "./config.yaml"
 
 func readConfig() {
 	yamlInfo := gojsonq.New(gojsonq.SetDecoder(&yamlDecoder{})).File(yamlPath)
-	yamlConfig.urlHeader = yamlInfo.Reset().Find("host.urlHeader").(string)
+	yamlConfig.urlHeader = yamlInfo.Reset().Find("urlHeader").(string)
+	fmt.Println(yamlInfo.Reset().Find("admin"))
 }
 
 // Decode 实现gojsonq.Decoder
@@ -30,6 +34,6 @@ func (i *yamlDecoder) Decode(data []byte, v interface{}) error {
 	return json.Unmarshal(bb, &v)
 }
 
-//func main() {
-//	readConfig()
-//}
+func main() {
+	readConfig()
+}
