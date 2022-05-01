@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/thedevsaddam/gojsonq"
+	"strconv"
 )
 
-type httpPost struct {
+type cqPostFrom struct {
 	Time        int    `json:"time"`
 	SelfId      int    `json:"self_id"`
 	PostType    string `json:"post_type"`
@@ -24,17 +26,64 @@ type httpPost struct {
 	} `json:"sender"`
 }
 
+func getGroupId(fromInfo cqPostFrom) (string, bool) {
+	msg, err := getMsg(strconv.Itoa(fromInfo.MessageId))
+	if err != nil {
+		return "", false
+	}
+	fJson := gojsonq.New().JSONString(msg)
+	groupId := strconv.Itoa(int(fJson.Reset().Find("data.group_id").(float64)))
+	//fmt.Println("---------------------------------------")
+	//fmt.Println(groupId)
+	//fmt.Println("---------------------------------------")
+	for _, s := range yamlConfig.listenGroup {
+		if s == groupId {
+			return groupId, true
+		}
+	}
+	// 返回id,但是不在监听群列表中
+	return groupId, false
+}
+
+func groupEvent(fromInfo cqPostFrom, groupId string) {
+	if fromInfo.Message == "叫两声" {
+		sendGroupMsg(groupId, "汪汪", "false")
+	}
+}
+
+func event(fromInfo cqPostFrom) {
+	if fromInfo.MessageType == "group" {
+		groupId, ok := getGroupId(fromInfo)
+		if ok {
+			groupEvent(fromInfo, groupId)
+		}
+	}
+	//fmt.Println("---------------------------------------")
+	//fmt.Println(getMsg(strconv.Itoa(fromInfo.MessageId)))
+	//fmt.Println("---------------------------------------")
+	//if fromInfo.Message == "[CQ:at,qq="+strconv.Itoa(fromInfo.SelfId)+"] 叫两声" {
+	//
+	//}
+}
+
 func listenFromCqhttp(c *gin.Context) {
-	var form httpPost
+	//fmt.Printf("%#v", c.Request.Body)
+	var form cqPostFrom
 	if c.ShouldBind(&form) == nil {
 		//fmt.Printf("%#v", form)
 		info, _ := json.Marshal(form)
 		fmt.Println(string(info))
+		pJson := gojsonq.New().JSONString(string(info))
+		if pJson.Reset().Find("post_type").(string) != "meta_event" {
+			// do event
+			event(form)
+		}
 	}
 }
 
 func main() {
+	readConfig() // 读取配置
 	router := gin.Default()
-	router.POST("/listenFromCqhttp", listenFromCqhttp)
+	router.POST("/", listenFromCqhttp)
 	router.Run(":5000")
 }
