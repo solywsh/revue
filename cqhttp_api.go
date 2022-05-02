@@ -7,6 +7,20 @@ import (
 	"strconv"
 )
 
+//
+//  formatAccessUrl
+//  @Description: 格式化url，根据配置文件是否开启鉴权格式化
+//  @param str
+//  @return string
+//
+func formatAccessUrl(str string) string {
+	if yamlConfig.fAuth.enable {
+		return yamlConfig.urlHeader + str + "?access_token=" + yamlConfig.fAuth.tokenOrSecret
+	} else {
+		return yamlConfig.urlHeader + str
+	}
+}
+
 // 发送私聊消息
 func sendPrivateMsg(userId, groupId, message, autoEscape string) (string, error) {
 	client := resty.New()
@@ -15,7 +29,7 @@ func sendPrivateMsg(userId, groupId, message, autoEscape string) (string, error)
 		"group_id":    groupId,
 		"message":     message,
 		"auto_escape": autoEscape,
-	}).Post(yamlConfig.urlHeader + "/send_private_msg")
+	}).Post(formatAccessUrl("/send_private_msg"))
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +48,7 @@ func sendGroupMsg(groupId, message, autoEscape string) (string, error) {
 		"group_id":    groupId,
 		"message":     message,
 		"auto_escape": autoEscape,
-	}).Post(yamlConfig.urlHeader + "/send_group_msg")
+	}).Post(formatAccessUrl("/send_group_msg"))
 	if err != nil {
 		return "", err
 	}
@@ -46,7 +60,17 @@ func sendGroupMsg(groupId, message, autoEscape string) (string, error) {
 	return messageId, err
 }
 
-// 发送消息
+//
+//  sendMsg
+//  @Description: 发送消息
+//  @param messageType 消息类型private、group,如果不传入根据传入id判断
+//  @param userId private时对方的qq
+//  @param groupId group时群号
+//  @param message 消息
+//  @param autoEscape 是否解析CQ码
+//  @return string 返回message_id
+//  @return error
+//
 func sendMsg(messageType, userId, groupId, message, autoEscape string) (string, error) {
 	client := resty.New()
 	post, err := client.R().SetQueryParams(map[string]string{
@@ -55,7 +79,7 @@ func sendMsg(messageType, userId, groupId, message, autoEscape string) (string, 
 		"group_id":     groupId,
 		"message":      message,
 		"auto_escape":  autoEscape,
-	}).Post(yamlConfig.urlHeader + "/send_msg")
+	}).Post(formatAccessUrl("/send_msg"))
 	if err != nil {
 		return "", err
 	}
@@ -76,7 +100,7 @@ func deleteMsg(messageId string) {
 	client := resty.New()
 	_, _ = client.R().SetQueryParams(map[string]string{
 		"message_id": messageId,
-	}).Post(yamlConfig.urlHeader + "/delete_msg")
+	}).Post(formatAccessUrl("/delete_msg"))
 }
 
 //
@@ -88,7 +112,7 @@ func deleteFriend(friendId string) {
 	client := resty.New()
 	_, _ = client.R().SetQueryParams(map[string]string{
 		"friend_id": friendId,
-	}).Post(yamlConfig.urlHeader + "/delete_friend")
+	}).Post(formatAccessUrl("/delete_friend"))
 }
 
 //
@@ -120,7 +144,7 @@ func getMsg(messageId string) (string, error) {
 	client := resty.New()
 	post, err := client.R().SetQueryParams(map[string]string{
 		"message_id": messageId,
-	}).Post(yamlConfig.urlHeader + "/get_msg")
+	}).Post(formatAccessUrl("/get_msg"))
 	if err != nil {
 		return "", err
 	}
@@ -161,7 +185,7 @@ func getMsg(messageId string) (string, error) {
 //
 func getFriendList() (string, error) {
 	client := resty.New()
-	post, err := client.R().Post(yamlConfig.urlHeader + "/get_friend_list")
+	post, err := client.R().Post(formatAccessUrl("/get_friend_list"))
 	if err != nil {
 		return "", err
 	}
@@ -199,7 +223,7 @@ func getGroupInfo(groupId, noCache string) (string, error) {
 	post, err := client.R().SetQueryParams(map[string]string{
 		"group_id": groupId,
 		"no_cache": noCache,
-	}).Post(yamlConfig.urlHeader + "/get_group_info")
+	}).Post(formatAccessUrl("/get_group_info"))
 	if err != nil {
 		return "", err
 	}
@@ -242,7 +266,7 @@ func getGroupInfo(groupId, noCache string) (string, error) {
 //
 func getGroupList() (string, error) {
 	client := resty.New()
-	post, err := client.R().Post(yamlConfig.urlHeader + "/get_group_list")
+	post, err := client.R().Post(formatAccessUrl("/get_group_list"))
 	if err != nil {
 		return "", err
 	}
@@ -307,7 +331,7 @@ func getGroupMemberList(groupId string) (string, error) {
 	client := resty.New()
 	post, err := client.R().SetQueryParams(map[string]string{
 		"group_id": groupId,
-	}).Post(yamlConfig.urlHeader + "/get_group_member_list")
+	}).Post(formatAccessUrl("/get_group_member_list"))
 	if err != nil {
 		return "", err
 	}
@@ -338,7 +362,7 @@ func getGroupAtAllRemain(groupId string) (string, error) {
 	client := resty.New()
 	post, err := client.R().SetQueryParams(map[string]string{
 		"group_id": groupId,
-	}).Post(yamlConfig.urlHeader + "/get_group_at_all_remain")
+	}).Post(formatAccessUrl("/get_group_at_all_remain"))
 	if err != nil {
 		return "", err
 	}

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/thedevsaddam/gojsonq"
+	"io"
 	"strconv"
 )
 
@@ -46,6 +48,7 @@ func getGroupId(fromInfo cqPostFrom) (string, bool) {
 }
 
 func groupEvent(fromInfo cqPostFrom, groupId string) {
+	// 只是demo
 	if fromInfo.Message == "叫两声" {
 		sendGroupMsg(groupId, "汪汪", "false")
 	}
@@ -66,8 +69,21 @@ func event(fromInfo cqPostFrom) {
 	//}
 }
 
+func getSHA1(data string) string {
+	t := sha1.New()
+	_, err := io.WriteString(t, data)
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("%x", t.Sum(nil))
+}
+
 func listenFromCqhttp(c *gin.Context) {
-	//fmt.Printf("%#v", c.Request.Body)
+	headerXSignature := c.Request.Header.Get("X-Signature") // sha1
+	headerXSelfId := c.Request.Header.Get("X-Self-Id")      // 发送qq
+
+	fmt.Println(headerXSignature[len("sha1="):], headerXSelfId)
+
 	var form cqPostFrom
 	if c.ShouldBind(&form) == nil {
 		//fmt.Printf("%#v", form)
@@ -83,6 +99,10 @@ func listenFromCqhttp(c *gin.Context) {
 
 func main() {
 	readConfig() // 读取配置
+	//msg, err := sendMsg("private", "1228014966", "", "test", "false")
+	//if err != nil {
+	//	return
+	//}
 	router := gin.Default()
 	router.POST("/", listenFromCqhttp)
 	router.Run(":5000")
