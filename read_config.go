@@ -34,12 +34,12 @@ func readConfig() {
 	for _, v := range yamlInfo.Reset().Find("listenGroup").([]interface{}) {
 		yamlConfig.listenGroup = append(yamlConfig.listenGroup, v.(string))
 	}
-	// 正向
-	yamlConfig.fAuth.enable = yamlInfo.Reset().Find("access.enable").(bool)
-	yamlConfig.fAuth.tokenOrSecret = yamlInfo.Reset().Find("access.token").(string)
-	// 反向
-	yamlConfig.rAuth.enable = yamlInfo.Reset().Find("postAccess.enable").(bool)
-	yamlConfig.rAuth.tokenOrSecret = yamlInfo.Reset().Find("postAccess.secret").(string)
+	// 正向鉴权
+	yamlConfig.fAuth.enable = yamlInfo.Reset().Find("forwardAuthentication.enable").(bool)
+	yamlConfig.fAuth.tokenOrSecret = yamlInfo.Reset().Find("forwardAuthentication.token").(string)
+	// 反向鉴权
+	yamlConfig.rAuth.enable = yamlInfo.Reset().Find("reverseAuthentication.enable").(bool)
+	yamlConfig.rAuth.tokenOrSecret = yamlInfo.Reset().Find("reverseAuthentication.secret").(string)
 }
 
 // Decode 实现gojsonq.Decoder

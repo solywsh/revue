@@ -11,10 +11,10 @@ listenGroup:
   - '758796599'
   - '1103372786'
 # 正向鉴权,即向go-cqhttp客户端发送消息时进行鉴权
-access:
+forwardAuthentication:
   enable: true # true\false
   token: 'lmtss'
 # 反向鉴权,即接收go-cqhttp客户端消息时进行鉴权
-postAccess:
+reverseAuthentication:
   enable: true # true\false
   secret: 'sditr'
