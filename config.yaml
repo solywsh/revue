@@ -1,11 +1,14 @@
 # api的url,也就是部署go-cqhttp的url
-apiHost: http://127.0.0.1:5700
+urlHeader: 'http://127.0.0.1:5700'
 # qq机器人的qq号
 selfId: '3056159050'
 # 设置管理员
 adminUser:
   - '1228014966'
   - '2452973892'
+# 管理员命令头,默认"$",则命令类似于"$start"
+# 用于区分是否为命令(虽然具体的命令没有实现就是了)
+adminUserOrderHeader: '$'
 # 监听的qq群
 listenGroup:
   - '758796599'
@@ -18,3 +21,8 @@ forwardAuthentication:
 reverseAuthentication:
   enable: true # true\false
   secret: 'sditr'
+# revue机器人接口相关
+revue:
+  enable: true # true\false
+  # 接口密钥,会被SHA256加密
+  secret: "longMayTheSunShine"

@@ -14,10 +14,10 @@ import (
 //  @return string
 //
 func formatAccessUrl(str string) string {
-	if yamlConfig.fAuth.enable {
-		return yamlConfig.urlHeader + str + "?access_token=" + yamlConfig.fAuth.tokenOrSecret
+	if yamlConfig.FAuth.Enable {
+		return yamlConfig.UrlHeader + str + "?access_token=" + yamlConfig.FAuth.Token
 	} else {
-		return yamlConfig.urlHeader + str
+		return yamlConfig.UrlHeader + str
 	}
 }
 

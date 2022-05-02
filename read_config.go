@@ -1,56 +1,63 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/ghodss/yaml"
-	"github.com/thedevsaddam/gojsonq"
+	"io/ioutil"
 )
 
-type access struct {
-	enable        bool
-	tokenOrSecret string
-}
-
-type config struct {
-	urlHeader   string
-	adminUser   []string
-	listenGroup []string
-	fAuth       access // 正向鉴权 forward authentication
-	rAuth       access // 反向鉴权 reverse authentication
-}
-
-type yamlDecoder struct {
-}
-
-var yamlConfig config
+var yamlConfig Config
 var yamlPath = "./config.yaml"
 
-func readConfig() {
-	yamlInfo := gojsonq.New(gojsonq.SetDecoder(&yamlDecoder{})).File(yamlPath)
-	yamlConfig.urlHeader = yamlInfo.Reset().Find("apiHost").(string)
-	for _, v := range yamlInfo.Reset().Find("adminUser").([]interface{}) {
-		yamlConfig.adminUser = append(yamlConfig.adminUser, v.(string))
-	}
-	for _, v := range yamlInfo.Reset().Find("listenGroup").([]interface{}) {
-		yamlConfig.listenGroup = append(yamlConfig.listenGroup, v.(string))
-	}
-	// 正向鉴权
-	yamlConfig.fAuth.enable = yamlInfo.Reset().Find("forwardAuthentication.enable").(bool)
-	yamlConfig.fAuth.tokenOrSecret = yamlInfo.Reset().Find("forwardAuthentication.token").(string)
-	// 反向鉴权
-	yamlConfig.rAuth.enable = yamlInfo.Reset().Find("reverseAuthentication.enable").(bool)
-	yamlConfig.rAuth.tokenOrSecret = yamlInfo.Reset().Find("reverseAuthentication.secret").(string)
+// Config 配置相关
+type Config struct {
+	AdminUOH    string                `yaml:"adminUserOrderHeader"`  // 管理员命令头 adminUserOrderHeader
+	ListenGroup []string              `yaml:"listenGroup"`           // 监听群列表
+	FAuth       ForwardAuthentication `yaml:"forwardAuthentication"` // 正向鉴权 forward authentication
+	RAuth       ReverseAuthentication `yaml:"reverseAuthentication"` // 反向鉴权 reverse authentication
+	Revue       Revue                 `yaml:"revue"`                 // revue相关
+	UrlHeader   string                `yaml:"urlHeader"`             // url
+	SelfId      string                `yaml:"selfId"`                // 机器人的qq
+	AdminUser   []string              `yaml:"adminUser"`             // 管理员列表
 }
 
-// Decode 实现gojsonq.Decoder
-func (i *yamlDecoder) Decode(data []byte, v interface{}) error {
-	bb, err := yaml.YAMLToJSON(data)
+// ForwardAuthentication 正向鉴权相关
+type ForwardAuthentication struct {
+	Enable bool   `yaml:"enable"`
+	Token  string `yaml:"token"`
+}
+
+// ReverseAuthentication 反向鉴权相关
+type ReverseAuthentication struct {
+	Enable bool   `yaml:"enable"`
+	Secret string `yaml:"secret"`
+}
+
+// Revue 相关
+type Revue struct {
+	Enable bool   `yaml:"enable"`
+	Secret string `yaml:"secret"`
+}
+
+//  getConf
+//  @Description: 读取Yaml配置文件,并转换成conf对象
+//  @receiver conf
+//  @return *Config
+//
+func (conf *Config) getConf() *Config {
+	//应该是 绝对地址
+	yamlFile, err := ioutil.ReadFile(yamlPath)
 	if err != nil {
-		return err
+		fmt.Println(err.Error())
 	}
-	return json.Unmarshal(bb, &v)
+	err = yaml.Unmarshal(yamlFile, conf)
+	//err = yaml.UnmarshalStrict(yamlFile, kafkaCluster)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return conf
 }
 
 //func main() {
-//	readConfig()
+//	yamlConfig.getConf()
 //}
