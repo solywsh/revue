@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
-	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/thedevsaddam/gojsonq"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // 用于接收go-cqhttp消息
@@ -71,19 +71,18 @@ func hmacSHA1Encrypt(encryptKey string, encryptText []byte) string {
 	return str
 }
 
-// GinAuthentication
+// GinReverseAuthentication
 // @Description: gin中间件,如果开启反向鉴权(reverseAuthentication)时,对数据进行验证
 // @return gin.HandlerFunc
 //
-func GinAuthentication() gin.HandlerFunc {
+func GinReverseAuthentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if yamlConfig.RAuth.Enable {
+		if yamlConfig.ReverseAuthentication.Enable {
 			body, _ := ioutil.ReadAll(c.Request.Body)
 			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body)) // 重设body
 			headerXSignature := c.Request.Header.Get("X-Signature")  // sha1签名
 			//headerXSelfId := c.Request.Header.Get("X-Self-Id")      // 发送消息的qq
-			//fmt.Println(headerXSignature[len("sha1="):], headerXSelfId)
-			if headerXSignature[len("sha1="):] != hmacSHA1Encrypt(yamlConfig.RAuth.Secret, body) {
+			if headerXSignature[len("sha1="):] != hmacSHA1Encrypt(yamlConfig.ReverseAuthentication.Secret, body) {
 				c.JSON(
 					http.StatusForbidden,
 					gin.H{
@@ -98,36 +97,85 @@ func GinAuthentication() gin.HandlerFunc {
 }
 
 //
-//  getSHA256
-//  @Description: 得到SHA256之后的密钥
-//  @param str
-//  @return string
+//  listenFromSendPrivateMsg
+//  @Description: 监听revue发送私聊消息的接口
+//  @param c
 //
-func getSHA256(str string) string {
-	sha256Bytes := sha256.Sum256([]byte(str))
-	return hex.EncodeToString(sha256Bytes[:])
-}
-
 func listenFromSendPrivateMsg(c *gin.Context) {
 	// 如果revue没开启直接结束
 	if !yamlConfig.Revue.Enable {
 		c.Abort()
 	}
 	var form revueSendMsgApi
-	// token正确时
-	if c.ShouldBind(&form) == nil &&
-		getSHA256(yamlConfig.Revue.Secret) == form.Token {
-		fmt.Printf("%#v\n", form)
+	if c.ShouldBindBodyWith(&form, binding.JSON) == nil {
+		// do event
+		autoEscape := ""
+		if strings.ToUpper(form.AutoEscape) == "TRUE" {
+			autoEscape = "true"
+		} else {
+			autoEscape = "false"
+		}
+		msg, err := sendMsg("private", form.UserId, "", form.Message, autoEscape)
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				gin.H{
+					"code": http.StatusInternalServerError,
+					"msg":  msg, // 返回错误信息
+				},
+			)
+		} else {
+			c.JSON(
+				http.StatusOK,
+				gin.H{
+					"code": http.StatusOK,
+					"msg":  msg, // 正确返回msg id
+				},
+			)
+		}
+
+	} else {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"code": http.StatusBadRequest,
+				"msg":  "请求参数不能识别",
+			},
+		)
+	}
+}
+
+//
+// GinRevueAuthentication
+// @Description: revue接口中间件,对发送的token进行验证
+// @return gin.HandlerFunc
+//
+func GinRevueAuthentication() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if yamlConfig.ReverseAuthentication.Enable {
+			body, _ := ioutil.ReadAll(c.Request.Body)
+			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body)) // 重设body
+			pJson := gojsonq.New().JSONString(string(body))
+			if yamlConfig.Revue.AfterEncryption != pJson.Reset().Find("token") {
+				c.JSON(
+					http.StatusForbidden,
+					gin.H{
+						"code": http.StatusForbidden,
+						"msg":  "密钥错误",
+					},
+				)
+				c.Abort() // 结束会话
+			}
+		}
 	}
 }
 
 func main() {
 	yamlConfig.getConf() // 读取配置
 	router := gin.Default()
-
-	router.POST("/send_private_msg", listenFromSendPrivateMsg)
-	//router.Use(GinAuthentication()) // 下面的路由都使用这个中间件
 	// 监听动作并做出反应
-	router.POST("/", listenFromCqhttp)
+	router.POST("/", GinReverseAuthentication(), listenFromCqhttp)
+	// 监听revue提供发送消息的接口
+	router.POST("/send_private_msg", GinRevueAuthentication(), listenFromSendPrivateMsg)
 	router.Run(":5000")
 }

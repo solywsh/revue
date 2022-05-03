@@ -14,8 +14,8 @@ import (
 //  @return string
 //
 func formatAccessUrl(str string) string {
-	if yamlConfig.FAuth.Enable {
-		return yamlConfig.UrlHeader + str + "?access_token=" + yamlConfig.FAuth.Token
+	if yamlConfig.ForwardAuthentication.Enable {
+		return yamlConfig.UrlHeader + str + "?access_token=" + yamlConfig.ForwardAuthentication.Token
 	} else {
 		return yamlConfig.UrlHeader + str
 	}
@@ -81,14 +81,14 @@ func sendMsg(messageType, userId, groupId, message, autoEscape string) (string, 
 		"auto_escape":  autoEscape,
 	}).Post(formatAccessUrl("/send_msg"))
 	if err != nil {
-		return "", err
+		return "POST ERROR", err
 	}
 	rJson := gojsonq.New().JSONString(string(post.Body()))
 	if rJson.Reset().Find("retcode") != nil && rJson.Reset().Find("retcode").(float64) != 0.0 {
-		return "", fmt.Errorf(string(post.Body()))
+		return rJson.Reset().Find("msg").(string), fmt.Errorf(string(post.Body()))
 	}
 	messageId := strconv.Itoa(int(rJson.Reset().Find("data.message_id").(float64)))
-	return messageId, err
+	return messageId, nil
 }
 
 //
