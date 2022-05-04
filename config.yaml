@@ -1,3 +1,5 @@
+# 监听端口
+listenPort: '5000'
 # api的url,也就是部署go-cqhttp的url
 urlHeader: 'http://127.0.0.1:5700'
 # qq机器人的qq号
@@ -26,3 +28,7 @@ revue:
   enable: true # true\false
   # 接口密钥,会被SHA256加密
   secret: "longMayTheSunShine"
+# 数据库相关
+Database:
+  # 数据库路径
+  path: './data.db'

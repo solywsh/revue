@@ -5,12 +5,13 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
-	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/thedevsaddam/gojsonq"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/thedevsaddam/gojsonq"
 )
 
 // 用于接收go-cqhttp消息
@@ -170,12 +171,14 @@ func GinRevueAuthentication() gin.HandlerFunc {
 	}
 }
 
+var yamlConfig Config // 定义全局变量
+
 func main() {
-	yamlConfig.getConf() // 读取配置
+	yamlConfig.getConf("./config.yaml") // 读取配置
 	router := gin.Default()
 	// 监听动作并做出反应
 	router.POST("/", GinReverseAuthentication(), listenFromCqhttp)
 	// 监听revue提供发送消息的接口
 	router.POST("/send_private_msg", GinRevueAuthentication(), listenFromSendPrivateMsg)
-	router.Run(":5000")
+	router.Run(":" + yamlConfig.ListenPort)
 }

@@ -27,14 +27,3 @@ func cqCodeMusic(musicType, musicId string) string {
 	// musicType : qq 163 xm
 	return "[CQ:music,type=" + musicType + ",id=" + musicId + "]"
 }
-
-//func main() {
-//	s := CQcodeFace{
-//		Type: "face",
-//		Data: struct {
-//			ID string `json:"id"`
-//		}{ID: "123"},
-//	}
-//	marshal, _ := json.Marshal(s)
-//	fmt.Println(string(marshal))
-//}

@@ -8,11 +8,9 @@ import (
 	"io/ioutil"
 )
 
-var yamlConfig Config
-var yamlPath = "./config.yaml"
-
 // Config 配置相关
 type Config struct {
+	ListenPort            string                `yaml:"listenPort"`            // 监听端口
 	AdminUOH              string                `yaml:"adminUserOrderHeader"`  // 管理员命令头 adminUserOrderHeader
 	ListenGroup           []string              `yaml:"listenGroup"`           // 监听群列表
 	ForwardAuthentication ForwardAuthentication `yaml:"forwardAuthentication"` // 正向鉴权 forward authentication
@@ -21,7 +19,7 @@ type Config struct {
 	UrlHeader             string                `yaml:"urlHeader"`             // url
 	SelfId                string                `yaml:"selfId"`                // 机器人的qq
 	AdminUser             []string              `yaml:"adminUser"`             // 管理员列表
-
+	Database              Database              `yaml:"Database"`              // 数据库相关
 }
 
 // ForwardAuthentication 正向鉴权相关
@@ -43,6 +41,11 @@ type Revue struct {
 	AfterEncryption string // 存储revue密钥SHA256的结果
 }
 
+// Database 数据库相关
+type Database struct {
+	Path string `yaml:"path"`
+}
+
 //
 //  getSHA256
 //  @Description: 得到SHA256之后的密钥
@@ -59,7 +62,7 @@ func getSHA256(str string) string {
 //  @receiver conf
 //  @return *Config
 //
-func (conf *Config) getConf() *Config {
+func (conf *Config) getConf(yamlPath string) *Config {
 	yamlFile, err := ioutil.ReadFile(yamlPath)
 	if err != nil {
 		fmt.Println(err.Error())
