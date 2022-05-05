@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/thedevsaddam/gojsonq"
 	"strconv"
+	"strings"
 )
 
 //
@@ -38,6 +39,14 @@ func groupEvent(fromInfo cqPostFrom, groupId string) {
 	// demo
 	if fromInfo.Message == "叫两声" {
 		sendGroupMsg(groupId, "汪汪", "false")
+	}
+	//fmt.Println(fromInfo.Message)
+	if strings.HasPrefix(fromInfo.Message, "查找音乐") {
+		if res, musicId := music163(strings.TrimPrefix(fromInfo.Message, "查找音乐")); res {
+			sendGroupMsg(groupId, cqCodeMusic("163", musicId), "false")
+		} else {
+			sendGroupMsg(groupId, "没有找到", "false")
+		}
 	}
 }
 

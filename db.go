@@ -66,7 +66,7 @@ func dbInit() {
 	globalDB.AutoMigrate(RevueConfig{}, KeywordsReply{}, RevueApiToken{})
 	//var rc RevueConfig
 	// 不存在则自动创建(理论上配置只有一条记录，所以ID只能为1)
-	globalDB.Where(RevueConfig{ID: 1}).Attrs(RevueConfig{ID: 1}).FirstOrCreate(&RevueConfig{})
+	globalDB.Where(RevueConfig{ID: 1}).Attrs(RevueConfig{ID: 1, ReplyEnable: true, MusicEnable: true}).FirstOrCreate(&RevueConfig{})
 }
 
 func getAllKeywordsReply(res *[]KeywordsReply) {
@@ -165,8 +165,43 @@ func deleteRevueApiToken(userId string) (bool, string) {
 }
 
 //
+//  getRevueConfig
+//  @Description: 获取RevueConfig配置
+//  @param config
+//  @return bool
+//
+func getRevueConfig(config *RevueConfig) bool {
+	res := globalDB.Where(RevueConfig{ID: 1}).First(&config)
+	if res.RowsAffected >= 1 {
+		return true
+	}
+	return false
+}
+
+//
+//  setRevueConfigMusic
+//  @Description: 设置music开启和关闭
+//  @param enable
+//
+func setRevueConfigMusic(enable bool) {
+	globalDB.Model(&RevueConfig{}).Where(RevueConfig{ID: 1}).Update("music_enable", enable)
+}
+
+//
+//  setRevueConfigReply
+//  @Description: 设置reply开启和关闭
+//  @param enable
+//
+func setRevueConfigReply(enable bool) {
+	globalDB.Model(&RevueConfig{}).Where(RevueConfig{ID: 1}).Update("reply_enable", enable)
+}
+
 //func main() {
 //	dbInit()
-//	//insertRevueApiToken("1228014966", 4)
-//	deleteRevueApiToken("1228014966")
+//	setRevueConfigMusic(true)
+//	setRevueConfigReply(false)
+//	var rc RevueConfig
+//	if getRevueConfig(&rc) {
+//		fmt.Println(rc.MusicEnable, rc.ReplyEnable)
+//	}
 //}
