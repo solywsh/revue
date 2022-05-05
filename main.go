@@ -157,7 +157,9 @@ func GinRevueAuthentication() gin.HandlerFunc {
 			body, _ := ioutil.ReadAll(c.Request.Body)
 			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body)) // 重设body
 			pJson := gojsonq.New().JSONString(string(body))
-			if yamlConfig.Revue.AfterEncryption != pJson.Reset().Find("token") {
+			pToken := pJson.Reset().Find("token").(string)
+			pUserId := pJson.Reset().Find("user_id").(string)
+			if res, permission := searchRevueApiToken(pUserId, pToken); !res || permission < 4 {
 				c.JSON(
 					http.StatusForbidden,
 					gin.H{
@@ -171,9 +173,8 @@ func GinRevueAuthentication() gin.HandlerFunc {
 	}
 }
 
-var yamlConfig Config // 定义全局变量
-
 func main() {
+	dbInit()                            // 初始化数据库
 	yamlConfig.getConf("./config.yaml") // 读取配置
 	router := gin.Default()
 	// 监听动作并做出反应

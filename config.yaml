@@ -7,7 +7,6 @@ selfId: '3056159050'
 # 设置管理员
 adminUser:
   - '1228014966'
-  - '2452973892'
 # 管理员命令头,默认"$",则命令类似于"$start"
 # 用于区分是否为命令(虽然具体的命令没有实现就是了)
 adminUserOrderHeader: '$'
@@ -26,8 +25,6 @@ reverseAuthentication:
 # revue机器人接口相关
 revue:
   enable: true # true\false
-  # 接口密钥,会被SHA256加密
-  secret: "longMayTheSunShine"
 # 数据库相关
 Database:
   # 数据库路径

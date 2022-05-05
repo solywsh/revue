@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 )
 
+var yamlConfig Config // 定义全局变量用于配置
+
 // Config 配置相关
 type Config struct {
 	ListenPort            string                `yaml:"listenPort"`            // 监听端口
@@ -36,9 +38,7 @@ type ReverseAuthentication struct {
 
 // Revue 相关
 type Revue struct {
-	Enable          bool   `yaml:"enable"`
-	Secret          string `yaml:"secret"`
-	AfterEncryption string // 存储revue密钥SHA256的结果
+	Enable bool `yaml:"enable"`
 }
 
 // Database 数据库相关
@@ -72,13 +72,10 @@ func (conf *Config) getConf(yamlPath string) *Config {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	// 将加密后密钥存储,方便后期使用
-	conf.Revue.AfterEncryption = getSHA256(conf.Revue.Secret)
 	return conf
 }
 
 //func main() {
 //	yamlConfig.getConf()
 //	fmt.Printf("%#v", yamlConfig.UrlHeader)
-//
 //}
