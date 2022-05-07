@@ -174,6 +174,7 @@ func GinRevueAuthentication() gin.HandlerFunc {
 }
 
 func main() {
+	gin.DisableConsoleColor()
 	dbInit()                            // 初始化数据库
 	yamlConfig.getConf("./config.yaml") // 读取配置
 	router := gin.Default()
@@ -181,5 +182,5 @@ func main() {
 	router.POST("/", GinReverseAuthentication(), listenFromCqhttp)
 	// 监听revue提供发送消息的接口
 	router.POST("/send_private_msg", GinRevueAuthentication(), listenFromSendPrivateMsg)
-	router.Run(":" + yamlConfig.ListenPort)
+	router.Run("0.0.0.0:" + yamlConfig.ListenPort)
 }

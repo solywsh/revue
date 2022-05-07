@@ -1,13 +1,32 @@
 package main
 
 import (
+	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
 	"os"
+	"time"
 )
 
-var globalDB, _ = gorm.Open(sqlite.Open("./data.db"), &gorm.Config{})
+var (
+	// 定义gorm日志
+	newLogger = logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second,   // 慢 SQL 阈值
+			LogLevel:                  logger.Silent, // Log level
+			IgnoreRecordNotFoundError: true,          // 忽略ErrRecordNotFound（记录未找到）错误
+			Colorful:                  false,         // 禁用彩色打印
+		},
+	)
+	// 定义全局gorm db
+	globalDB, _ = gorm.Open(sqlite.Open("./data.db"), &gorm.Config{
+		Logger: newLogger,
+	})
+)
 
 // RevueConfig 根据命令对机器人的一些配置进行动态配置
 type RevueConfig struct {
@@ -18,8 +37,12 @@ type RevueConfig struct {
 
 // KeywordsReply 关键词触发消息
 type KeywordsReply struct {
-	ID       uint   `gorm:"primaryKey;autoIncrement"`
-	Mode     uint   // 匹配模式 0:不匹配 1:完全匹配 2:存在匹配(find)
+	ID   uint `gorm:"primaryKey;autoIncrement"`
+	Mode uint // 匹配模式 0:不匹配 1:完全匹配 2:存在匹配(find)
+	Flag uint // 设置标记,
+	// 触发“开始添加”时,插入userid记录,其他为空,flag=1
+	// 该userid回复的第二条msg设置为keywords,flag=2
+	// 该userid回复的第三条msg设置为msg,flag=0,添加完成
 	Keywords string // 关键词
 	Msg      string // 回复消息
 	Userid   string // 设置人的qq
@@ -63,7 +86,7 @@ func PathExists(path string) (bool, error) {
 //
 func dbInit() {
 	// 自动迁移,如果数据库不存在对应表，则创建
-	globalDB.AutoMigrate(RevueConfig{}, KeywordsReply{}, RevueApiToken{})
+	_ = globalDB.AutoMigrate(RevueConfig{}, KeywordsReply{}, RevueApiToken{})
 	//var rc RevueConfig
 	// 不存在则自动创建(理论上配置只有一条记录，所以ID只能为1)
 	globalDB.Where(RevueConfig{ID: 1}).Attrs(RevueConfig{ID: 1, ReplyEnable: true, MusicEnable: true}).FirstOrCreate(&RevueConfig{})
@@ -196,12 +219,73 @@ func setRevueConfigReply(enable bool) {
 	globalDB.Model(&RevueConfig{}).Where(RevueConfig{ID: 1}).Update("reply_enable", enable)
 }
 
+//
+//  updateKeywordsReply
+//  @Description: 插入/更新关键词回复,如果存在对应关键词,则更新,不存在则insert
+//  @param info
+//
+func updateKeywordsReply(info KeywordsReply) {
+	var kr KeywordsReply
+	if info.Flag == 1 {
+		// 第一次创建
+		globalDB.Create(&info)
+	} else if info.Flag == 2 {
+		// 第二次添加关键词
+		globalDB.Where(KeywordsReply{ID: info.ID}).First(&kr)
+		// 如果第二次为更新之前查询,需要更新设置人的qq
+		globalDB.Model(&kr).Updates(KeywordsReply{Keywords: info.Keywords, Userid: info.Userid, Flag: 2})
+	} else if info.Flag == 3 {
+		// 第三次添加回复和匹配模式
+		globalDB.Where(KeywordsReply{ID: info.ID}).First(&kr)
+		globalDB.Model(&kr).Updates(KeywordsReply{Msg: info.Msg, Mode: info.Mode, Flag: 3})
+	}
+	fmt.Println(kr.ID, kr.Keywords, kr.Msg)
+}
+
+//
+//  getKeywordsReplyFlag
+//  @Description: 根据userid查找是否存在正在记录的自动回复
+//  @param userId
+//  @return bool
+//  @return uint KeywordsReply.ID
+//  @return uint KeywordsReply.Flag
+//
+func getKeywordsReplyFlag(userId string) (bool, KeywordsReply) {
+	var kr KeywordsReply
+	if res := globalDB.Where("userid = ? AND flag <> ?", userId, 3).First(&kr); res.RowsAffected >= 1 {
+		return true, kr
+	} else {
+		return false, kr
+	}
+}
+
+//
+//  searchKeywordsReply
+//  @Description: 根据关键词搜索是否存在记录,如果存在记录则返回对应回复
+//  @param keyword
+//  @return bool
+//  @return KeywordsReply
+//
+func searchKeywordsReply(keywords string) (bool, KeywordsReply) {
+	var kr KeywordsReply
+	// 存在关键词并且状态flag为0
+	if res := globalDB.Where(KeywordsReply{Keywords: keywords, Flag: 0}).First(&kr); res.RowsAffected >= 1 {
+		return true, kr
+	}
+	return false, kr
+}
+
+//
+//  deleteKeywordsReply
+//  @Description: 删除对应的关键词回复
+//  @param id
+//
+func deleteKeywordsReply(id uint) {
+	globalDB.Delete(&KeywordsReply{}, id)
+}
+
 //func main() {
 //	dbInit()
-//	setRevueConfigMusic(true)
-//	setRevueConfigReply(false)
-//	var rc RevueConfig
-//	if getRevueConfig(&rc) {
-//		fmt.Println(rc.MusicEnable, rc.ReplyEnable)
-//	}
+//	updateKeywordsReply(KeywordsReply{Flag: 3, ID: 2, Msg: "认识王乃琳", Mode: 1})
+//
 //}

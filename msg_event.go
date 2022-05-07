@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/thedevsaddam/gojsonq"
 	"strconv"
 	"strings"
@@ -35,18 +36,95 @@ func getGroupId(formInfo cqPostFrom) (string, bool) {
 //  @param formInfo
 //  @param groupId
 //
-func groupEvent(fromInfo cqPostFrom, groupId string) {
-	// demo
-	if fromInfo.Message == "叫两声" {
-		sendGroupMsg(groupId, "汪汪", "false")
-	}
-	//fmt.Println(fromInfo.Message)
-	if strings.HasPrefix(fromInfo.Message, "查找音乐") {
-		if res, musicId := music163(strings.TrimPrefix(fromInfo.Message, "查找音乐")); res {
-			sendGroupMsg(groupId, cqCodeMusic("163", musicId), "false")
+func groupEvent(formInfo cqPostFrom, groupId string) {
+	switch {
+	case formInfo.Message == "叫两声":
+		_, _ = sendGroupMsg(groupId, "汪汪", "false")
+	case strings.HasPrefix(formInfo.Message, "查找音乐"):
+		// 查找音乐
+		findMusicEvent(groupId, formInfo)
+	case formInfo.Message == "开始添加":
+		// 触发添加自动回复
+		keywordsReplyAddEvent(groupId, formInfo, 1, 0)
+	case strings.HasPrefix(formInfo.Message, "删除自动回复:"):
+		// 删除自动回复
+		keywordsReplyDeleteEvent(strings.TrimPrefix(formInfo.Message, "删除自动回复:"), groupId)
+	default:
+		// 添加自动回复(关键词/回复内容)
+		if res, kr := getKeywordsReplyFlag(strconv.Itoa(formInfo.UserId)); res {
+			keywordsReplyAddEvent(groupId, formInfo, kr.Flag+1, kr.ID)
 		} else {
-			sendGroupMsg(groupId, "没有找到", "false")
+			// 自动回复
+			autoGroupMsg(groupId, formInfo)
 		}
+	}
+
+}
+
+//
+//  findMusicEvent
+//  @Description: 查找音乐事件处理
+//  @param groupId
+//  @param formInfo
+//
+func findMusicEvent(groupId string, formInfo cqPostFrom) {
+	if res, musicId := music163(strings.TrimPrefix(formInfo.Message, "查找音乐")); res {
+		_, _ = sendGroupMsg(groupId, cqCodeMusic("163", musicId), "false")
+	} else {
+		_, _ = sendGroupMsg(groupId, "没有找到", "false")
+	}
+}
+
+//
+//  keywordsReplyDeleteEvent
+//  @Description: 关键词删除事件处理
+//  @param msg
+//  @param groupId
+//
+func keywordsReplyDeleteEvent(msg, groupId string) {
+	fmt.Println("删除:", msg)
+	if res, kr := searchKeywordsReply(msg); res {
+		deleteKeywordsReply(kr.ID)
+		_, _ = sendGroupMsg(groupId, "删除\""+msg+"\"成功", "false")
+	} else {
+		_, _ = sendGroupMsg(groupId, "没有找到对应的关键词", "false")
+	}
+}
+
+//
+//  keywordsReplyAddEvent
+//  @Description: 关键词添加事件处理
+//  @param groupId
+//  @param formInfo
+//  @param rate
+//  @param krId
+//
+func keywordsReplyAddEvent(groupId string, formInfo cqPostFrom, rate uint, krId uint) {
+	if rate == 1 {
+		if res, kr := getKeywordsReplyFlag(strconv.Itoa(formInfo.UserId)); res {
+			if kr.Flag == 1 {
+				_, _ = sendGroupMsg(groupId, "你有一个正在添加的任务,不能重复发送\"开始添加\",请设置触发关键词", "false")
+			} else if kr.Flag == 2 {
+				_, _ = sendGroupMsg(groupId, "你有一个正在添加的任务,不能重复发送\"开始添加\",请为:\""+kr.Keywords+"\"设置回复", "false")
+			}
+		} else {
+			updateKeywordsReply(KeywordsReply{Flag: 1, Userid: strconv.Itoa(formInfo.UserId)})
+			_, _ = sendGroupMsg(groupId, "开始添加,请设置关键词", "false")
+		}
+	} else if rate == 2 {
+		// 这个关键词已经存在了,覆盖
+		if res, kr := searchKeywordsReply(formInfo.Message); res {
+			deleteKeywordsReply(krId) // 删除暂存的
+			kr.Userid = strconv.Itoa(formInfo.UserId)
+			kr.Flag = 2
+			updateKeywordsReply(kr)
+		} else {
+			updateKeywordsReply(KeywordsReply{ID: krId, Flag: 2, Userid: strconv.Itoa(formInfo.UserId), Keywords: formInfo.Message})
+		}
+		_, _ = sendGroupMsg(groupId, "请为\""+formInfo.Message+"\"设置回复", "false")
+	} else if rate == 3 {
+		updateKeywordsReply(KeywordsReply{ID: krId, Flag: 3, Msg: formInfo.Message, Mode: 1})
+		_, _ = sendGroupMsg(groupId, "添加完成", "false")
 	}
 }
 
@@ -76,12 +154,12 @@ func adminEvent(formInfo cqPostFrom) {
 	if formInfo.MessageType == "group" {
 		groupId, _ := getGroupId(formInfo) // 得到消息的qq群号
 		// demo 复读消息
-		sendGroupMsg(groupId, formInfo.Message, "false")
+		_, _ = sendGroupMsg(groupId, formInfo.Message, "false")
 	}
 	// 私聊消息
 	if formInfo.MessageType == "private" {
 		// demo 复读消息
-		sendMsg(formInfo.MessageType, strconv.Itoa(formInfo.UserId), "", formInfo.Message, "false")
+		_, _ = sendMsg(formInfo.MessageType, strconv.Itoa(formInfo.UserId), "", formInfo.Message, "false")
 	}
 }
 
@@ -105,6 +183,7 @@ func msgEvent(formInfo cqPostFrom) {
 			// 发送菜单
 			if formInfo.Message == "/help" {
 				sendMenu(formInfo, 2)
+				return
 			}
 		}
 		// 对不是监听qq群列表的消息做出相应
@@ -144,14 +223,17 @@ func sendMenu(formInfo cqPostFrom, model int) {
 	s := "revue提供以下命令:\n"
 	if model == 1 {
 		s += "revueApi 相关(私聊执行命令):\n"
-		s += "/getToken 获取token\n"
-		s += "/resetToken 重置token\n"
-		s += "/deleteToken 删除token"
-		sendMsg("", strconv.Itoa(formInfo.UserId), "", s, "false")
+		s += "[/getToken] 获取token\n"
+		s += "[/resetToken] 重置token\n"
+		s += "[/deleteToken] 删除token"
+		_, _ = sendMsg("", strconv.Itoa(formInfo.UserId), "", s, "false")
 	} else {
-		s += "该环境下暂时为空呢"
+		s += "群聊菜单:\n"
+		s += "[开始添加] 添加自动回复\n"
+		s += "[删除自动回复:{关键词}] 删除自动回复\n"
+		s += "[查找音乐{关键词}] 查找音乐(暂时只支持163)\n"
 		gId, _ := getGroupId(formInfo)
-		sendMsg("", "", gId, s, "false")
+		_, _ = sendMsg("", "", gId, s, "false")
 	}
 }
 
@@ -162,9 +244,9 @@ func sendMenu(formInfo cqPostFrom, model int) {
 //
 func msgAddApiToken(formInfo cqPostFrom) {
 	if res, token := insertRevueApiToken(strconv.Itoa(formInfo.UserId), 4); res {
-		sendMsg("", strconv.Itoa(formInfo.UserId), "", "创建成功,你的token是:"+token+"\n注意,该token只能给自己发送消息", "false")
+		_, _ = sendMsg("", strconv.Itoa(formInfo.UserId), "", "创建成功,你的token是:"+token+"\n注意,该token只能给自己发送消息", "false")
 	} else {
-		sendMsg("", strconv.Itoa(formInfo.UserId), "", "创建失败,你已经创建过了,token是:"+token, "false")
+		_, _ = sendMsg("", strconv.Itoa(formInfo.UserId), "", "创建失败,你已经创建过了,token是:"+token, "false")
 	}
 }
 
@@ -175,16 +257,28 @@ func msgAddApiToken(formInfo cqPostFrom) {
 //
 func msgResetApiToken(formInfo cqPostFrom) {
 	if res, token := resetRevueApiToken(strconv.Itoa(formInfo.UserId)); res {
-		sendMsg("", strconv.Itoa(formInfo.UserId), "", "重置成功,你的token是:"+token+"\n注意,该token只能给自己发送消息", "false")
+		_, _ = sendMsg("", strconv.Itoa(formInfo.UserId), "", "重置成功,你的token是:"+token+"\n注意,该token只能给自己发送消息", "false")
 	} else {
-		sendMsg("", strconv.Itoa(formInfo.UserId), "", "重置失败,请先创建token", "false")
+		_, _ = sendMsg("", strconv.Itoa(formInfo.UserId), "", "重置失败,请先创建token", "false")
 	}
 }
 
 func msgDeleteApiToken(formInfo cqPostFrom) {
 	if res, token := deleteRevueApiToken(strconv.Itoa(formInfo.UserId)); res {
-		sendMsg("", strconv.Itoa(formInfo.UserId), "", token+"删除成功", "false")
+		_, _ = sendMsg("", strconv.Itoa(formInfo.UserId), "", token+"删除成功", "false")
 	} else {
-		sendMsg("", strconv.Itoa(formInfo.UserId), "", "删除失败,可能数据库没有对应的信息", "false")
+		_, _ = sendMsg("", strconv.Itoa(formInfo.UserId), "", "删除失败,可能数据库没有对应的信息", "false")
+	}
+}
+
+//
+//  autoGroupMsg
+//  @Description: 根据群消息自动回复
+//  @param groupId qq群号
+//  @param formInfo
+//
+func autoGroupMsg(groupId string, formInfo cqPostFrom) {
+	if res, kr := searchKeywordsReply(formInfo.Message); res {
+		_, _ = sendGroupMsg(groupId, kr.Msg, "false")
 	}
 }
