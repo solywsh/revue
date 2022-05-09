@@ -23,7 +23,10 @@ var (
 		},
 	)
 	// 定义全局gorm db
-	globalDB, _ = gorm.Open(sqlite.Open("./data.db"), &gorm.Config{
+	//globalDB, _ = gorm.Open(sqlite.Open("./data.db"), &gorm.Config{
+	//	Logger: newLogger,
+	//})
+	globalDB, _ = gorm.Open(sqlite.Open(yamlConfig.Database.Path), &gorm.Config{
 		Logger: newLogger,
 	})
 )
