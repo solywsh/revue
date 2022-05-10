@@ -48,7 +48,7 @@ func NewConf(yamlPath string) (conf *Config, err error) {
 		fmt.Println("文件打开错误,请传入正确的文件路径!", err)
 		return conf, err
 	}
-	fmt.Println(string(yamlFile))
+	//fmt.Println(string(yamlFile))
 	err = yaml.Unmarshal(yamlFile, &conf)
 	//err = yaml.UnmarshalStrict(yamlFile, kafkaCluster)
 	if err != nil {

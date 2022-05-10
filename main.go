@@ -57,7 +57,7 @@ func hmacSHA1Encrypt(encryptKey string, encryptText []byte) string {
 }
 
 // gin中间件,如果开启反向鉴权(reverseAuthentication)时,对数据进行验证
-func GinReverseAuthentication() gin.HandlerFunc {
+func ginReverseAuthentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if yamlConf.ReverseAuthentication.Enable {
 			body, _ := ioutil.ReadAll(c.Request.Body)
@@ -120,7 +120,7 @@ func listenFromSendPrivateMsg(c *gin.Context) {
 }
 
 // revue接口中间件,对发送的token进行验证
-func GinRevueAuthentication() gin.HandlerFunc {
+func ginRevueAuthentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if yamlConf.ReverseAuthentication.Enable {
 			body, _ := ioutil.ReadAll(c.Request.Body)
@@ -146,9 +146,9 @@ func main() {
 	gin.DisableConsoleColor() // 不显示彩色日志
 	router := gin.Default()
 	// 监听动作并做出反应
-	router.POST("/", GinReverseAuthentication(), listenFromCqhttp)
+	router.POST("/", ginReverseAuthentication(), listenFromCqhttp)
 	// 监听revue提供发送消息的接口
-	router.POST("/send_private_msg", GinRevueAuthentication(), listenFromSendPrivateMsg)
+	router.POST("/send_private_msg", ginRevueAuthentication(), listenFromSendPrivateMsg)
 	err := router.Run("0.0.0.0:" + yamlConf.ListenPort)
 	if err != nil {
 		return

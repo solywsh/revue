@@ -11,19 +11,6 @@ import (
 	"time"
 )
 
-var (
-	// 定义gorm日志
-	newLogger = logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold:             time.Second,   // 慢 SQL 阈值
-			LogLevel:                  logger.Silent, // Log level
-			IgnoreRecordNotFoundError: true,          // 忽略ErrRecordNotFound（记录未找到）错误
-			Colorful:                  false,         // 禁用彩色打印
-		},
-	)
-)
-
 // RevueConfig 根据命令对机器人的一些配置进行动态配置
 type RevueConfig struct {
 	ID          uint `gorm:"primaryKey;autoIncrement"`
@@ -66,7 +53,18 @@ type GormDb struct {
 
 // NewDB 重新封装
 func NewDB() (gb *GormDb) {
+	// 定义gorm日志
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second,   // 慢 SQL 阈值
+			LogLevel:                  logger.Silent, // Log level
+			IgnoreRecordNotFoundError: true,          // 忽略ErrRecordNotFound（记录未找到）错误
+			Colorful:                  false,         // 禁用彩色打印
+		},
+	)
 	yamlConfig, _ := conf.NewConf("./config.yaml")
+	gb = new(GormDb) // 由于定义的是地址,在使用前需要先分配内存
 	gb.DB, _ = gorm.Open(
 		sqlite.Open(yamlConfig.Database.Path),
 		&gorm.Config{Logger: newLogger})
