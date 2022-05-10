@@ -1,14 +1,10 @@
-package main
+package conf
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"github.com/ghodss/yaml"
 	"io/ioutil"
 )
-
-var yamlConfig Config // 定义全局变量用于配置
 
 // Config 配置相关
 type Config struct {
@@ -46,36 +42,18 @@ type Database struct {
 	Path string `yaml:"path"`
 }
 
-//
-//  getSHA256
-//  @Description: 得到SHA256之后的密钥
-//  @param str
-//  @return string
-//
-func getSHA256(str string) string {
-	sha256Bytes := sha256.Sum256([]byte(str))
-	return hex.EncodeToString(sha256Bytes[:])
-}
-
-//  getConf
-//  @Description: 读取Yaml配置文件,并转换成conf对象
-//  @receiver conf
-//  @return *Config
-//
-func (conf *Config) getConf(yamlPath string) *Config {
+func NewConf(yamlPath string) (conf *Config, err error) {
 	yamlFile, err := ioutil.ReadFile(yamlPath)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("文件打开错误,请传入正确的文件路径!", err)
+		return conf, err
 	}
-	err = yaml.Unmarshal(yamlFile, conf)
+	fmt.Println(string(yamlFile))
+	err = yaml.Unmarshal(yamlFile, &conf)
 	//err = yaml.UnmarshalStrict(yamlFile, kafkaCluster)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("文件解析错误,请配置正确的yaml格式!", err)
+		return conf, err
 	}
-	return conf
+	return conf, nil
 }
-
-//func main() {
-//	yamlConfig.getConf()
-//	fmt.Printf("%#v", yamlConfig.UrlHeader)
-//}

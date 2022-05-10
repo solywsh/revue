@@ -1,122 +1,12 @@
-package main
+package cq
 
 import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/thedevsaddam/gojsonq"
-	"strconv"
 )
 
-//
-//  formatAccessUrl
-//  @Description: 格式化url，根据配置文件是否开启鉴权格式化
-//  @param str
-//  @return string
-//
-func formatAccessUrl(str string) string {
-	if yamlConfig.ForwardAuthentication.Enable {
-		return yamlConfig.UrlHeader + str + "?access_token=" + yamlConfig.ForwardAuthentication.Token
-	} else {
-		return yamlConfig.UrlHeader + str
-	}
-}
-
-// 发送私聊消息
-func sendPrivateMsg(userId, groupId, message, autoEscape string) (string, error) {
-	client := resty.New()
-	post, err := client.R().SetQueryParams(map[string]string{
-		"user_id":     userId,
-		"group_id":    groupId,
-		"message":     message,
-		"auto_escape": autoEscape,
-	}).Post(formatAccessUrl("/send_private_msg"))
-	if err != nil {
-		return "", err
-	}
-	rJson := gojsonq.New().JSONString(string(post.Body()))
-	if rJson.Reset().Find("retcode") != nil && rJson.Reset().Find("retcode").(float64) != 0.0 {
-		return "", fmt.Errorf(string(post.Body()))
-	}
-	messageId := strconv.Itoa(int(rJson.Reset().Find("data.message_id").(float64)))
-	return messageId, err
-}
-
-// 发送群消息
-func sendGroupMsg(groupId, message, autoEscape string) (string, error) {
-	client := resty.New()
-	post, err := client.R().SetQueryParams(map[string]string{
-		"group_id":    groupId,
-		"message":     message,
-		"auto_escape": autoEscape,
-	}).Post(formatAccessUrl("/send_group_msg"))
-	if err != nil {
-		return "", err
-	}
-	rJson := gojsonq.New().JSONString(string(post.Body()))
-	if rJson.Reset().Find("retcode") != nil && rJson.Reset().Find("retcode").(float64) != 0.0 {
-		return "", fmt.Errorf(string(post.Body()))
-	}
-	messageId := strconv.Itoa(int(rJson.Reset().Find("data.message_id").(float64)))
-	return messageId, err
-}
-
-//
-//  sendMsg
-//  @Description: 发送消息
-//  @param messageType 消息类型private、group,如果不传入根据传入id判断
-//  @param userId private时对方的qq
-//  @param groupId group时群号
-//  @param message 消息
-//  @param autoEscape 是否解析CQ码
-//  @return string 返回message_id
-//  @return error
-//
-func sendMsg(messageType, userId, groupId, message, autoEscape string) (string, error) {
-	client := resty.New()
-	post, err := client.R().SetQueryParams(map[string]string{
-		"message_type": messageType,
-		"user_id":      userId,
-		"group_id":     groupId,
-		"message":      message,
-		"auto_escape":  autoEscape,
-	}).Post(formatAccessUrl("/send_msg"))
-	if err != nil {
-		return "POST ERROR", err
-	}
-	rJson := gojsonq.New().JSONString(string(post.Body()))
-	if rJson.Reset().Find("retcode") != nil && rJson.Reset().Find("retcode").(float64) != 0.0 {
-		return rJson.Reset().Find("msg").(string), fmt.Errorf(string(post.Body()))
-	}
-	messageId := strconv.Itoa(int(rJson.Reset().Find("data.message_id").(float64)))
-	return messageId, nil
-}
-
-//
-//  deleteMsg
-//  @Description: 撤回消息
-//  @param messageId 需要撤回的消息Id
-//
-func deleteMsg(messageId string) {
-	client := resty.New()
-	_, _ = client.R().SetQueryParams(map[string]string{
-		"message_id": messageId,
-	}).Post(formatAccessUrl("/delete_msg"))
-}
-
-//
-//  deleteFriend
-//  @Description: 删除好友
-//  @param friendId 好友qq号
-//
-func deleteFriend(friendId string) {
-	client := resty.New()
-	_, _ = client.R().SetQueryParams(map[string]string{
-		"friend_id": friendId,
-	}).Post(formatAccessUrl("/delete_friend"))
-}
-
-//
-//  getMsg
+// GetMsg
 //  @Description: 获取消息(信息)
 //  @param messageId
 //  @return string json的string格式
@@ -140,7 +30,7 @@ func deleteFriend(friendId string) {
 //	}
 //  @return error
 //
-func getMsg(messageId string) (string, error) {
+func GetMsg(messageId string) (string, error) {
 	client := resty.New()
 	post, err := client.R().SetQueryParams(map[string]string{
 		"message_id": messageId,
@@ -156,8 +46,7 @@ func getMsg(messageId string) (string, error) {
 
 }
 
-//
-//  getFriendList
+// GetFriendList
 //  @Description: 获取好友列表
 //  @return string:json的string格式
 //	{
@@ -183,7 +72,7 @@ func getMsg(messageId string) (string, error) {
 //	}
 //  @return error
 //
-func getFriendList() (string, error) {
+func GetFriendList() (string, error) {
 	client := resty.New()
 	post, err := client.R().Post(formatAccessUrl("/get_friend_list"))
 	if err != nil {
@@ -197,7 +86,7 @@ func getFriendList() (string, error) {
 
 }
 
-//
+// GetGroupInfo
 //  getGroupInfo
 //  @Description:
 //  @param groupId 群号
@@ -218,7 +107,7 @@ func getFriendList() (string, error) {
 //	}
 //  @return error
 //
-func getGroupInfo(groupId, noCache string) (string, error) {
+func GetGroupInfo(groupId, noCache string) (string, error) {
 	client := resty.New()
 	post, err := client.R().SetQueryParams(map[string]string{
 		"group_id": groupId,
@@ -234,8 +123,7 @@ func getGroupInfo(groupId, noCache string) (string, error) {
 	return string(post.Body()), nil
 }
 
-//
-//  getGroupList
+// GetGroupList
 //  @Description: 获取群列表
 //  @return string
 //  {
@@ -264,7 +152,7 @@ func getGroupInfo(groupId, noCache string) (string, error) {
 //	}
 //  @return error
 //
-func getGroupList() (string, error) {
+func GetGroupList() (string, error) {
 	client := resty.New()
 	post, err := client.R().Post(formatAccessUrl("/get_group_list"))
 	if err != nil {
@@ -278,8 +166,7 @@ func getGroupList() (string, error) {
 	return string(post.Body()), nil
 }
 
-//
-//  getGroupMemberList
+// GetGroupMemberList
 //  @Description: 获取群成员信息
 //  @param groupId 群号
 //  @return string
@@ -327,7 +214,7 @@ func getGroupList() (string, error) {
 //}
 //  @return error
 //
-func getGroupMemberList(groupId string) (string, error) {
+func GetGroupMemberList(groupId string) (string, error) {
 	client := resty.New()
 	post, err := client.R().SetQueryParams(map[string]string{
 		"group_id": groupId,
@@ -342,8 +229,7 @@ func getGroupMemberList(groupId string) (string, error) {
 	return string(post.Body()), nil
 }
 
-//
-//  getGroupAtAllRemain
+// GetGroupAtAllRemain
 //  @Description: 获取群@全体成员 剩余次数
 //  @param groupId 群号
 //  @return string
@@ -358,7 +244,7 @@ func getGroupMemberList(groupId string) (string, error) {
 //}
 //  @return error
 //
-func getGroupAtAllRemain(groupId string) (string, error) {
+func GetGroupAtAllRemain(groupId string) (string, error) {
 	client := resty.New()
 	post, err := client.R().SetQueryParams(map[string]string{
 		"group_id": groupId,
