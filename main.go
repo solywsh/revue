@@ -30,10 +30,9 @@ func init() {
 
 // revue发送消息api,用于接收
 type revueApiPost struct {
-	Token      string `json:"token"`       // 加密后的密钥
-	UserId     string `json:"user_id"`     // qq号
-	Message    string `json:"message"`     // 消息内容
-	AutoEscape string `json:"auto_escape"` // 消息内容是否作为纯文本发送(即不解析CQ码)
+	Token   string `json:"token"`   // 加密后的密钥
+	UserId  string `json:"user_id"` // qq号
+	Message string `json:"message"` // 消息内容
 }
 
 // 监听go-cqhttp动作并以此做出反应
@@ -89,7 +88,7 @@ func listenFromSendPrivateMsg(c *gin.Context) {
 		// do event
 		var cpf cq.PostForm
 		cpf.UserId, _ = strconv.Atoi(rap.UserId)
-		msg, err := cpf.SendMsg("private", cpf.Message)
+		msg, err := cpf.SendMsg("private", rap.Message)
 		if err != nil {
 			c.JSON(
 				http.StatusInternalServerError,
@@ -123,6 +122,17 @@ func listenFromSendPrivateMsg(c *gin.Context) {
 func ginRevueAuthentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if yamlConf.ReverseAuthentication.Enable {
+			if c.Query("message") != "" {
+				c.JSON(
+					http.StatusForbidden,
+					gin.H{
+						"code": http.StatusForbidden,
+						"msg":  "请数据放入body",
+					},
+				)
+				c.Abort()
+				return
+			}
 			body, _ := ioutil.ReadAll(c.Request.Body)
 			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body)) // 重设body
 			pJson := gojsonq.New().JSONString(string(body))
