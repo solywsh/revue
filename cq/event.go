@@ -6,6 +6,15 @@ import (
 	"strings"
 )
 
+// 对adminUser进行复读操作,用于防止风控(在处于listen状态下的群使用)
+func (cpf *PostForm) RepeatOperation() {
+	for _, s := range yamlConf.AdminUser {
+		if strconv.Itoa(cpf.UserId) == s {
+			_, _ = cpf.SendGroupMsg("[复读机](在防止风控中)" + cpf.Message)
+		}
+	}
+}
+
 // JudgeListenGroup 判断该群消息是否在监听群号列表中
 func (cpf *PostForm) JudgeListenGroup() bool {
 	groupId := strconv.Itoa(cpf.GroupId)
@@ -19,7 +28,10 @@ func (cpf *PostForm) JudgeListenGroup() bool {
 
 // GroupEvent 群消息事件
 func (cpf *PostForm) GroupEvent() {
+	cpf.RepeatOperation() // 对adminUSer复读防止风控
+	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
 	switch {
+	// demo
 	case cpf.Message == "叫两声":
 		_, _ = cpf.SendGroupMsg("汪汪")
 	case strings.HasPrefix(cpf.Message, "查找音乐"):
@@ -96,7 +108,7 @@ func (cpf *PostForm) KeywordsReplyAddEvent(rate uint, krId uint) {
 func (cpf *PostForm) JudgmentAdminUser() bool {
 	for _, s := range yamlConf.AdminUser {
 		// 判断是否为管理员以及是否为管理员命令头开头
-		if strconv.Itoa(cpf.UserId) == s && cpf.Message[:1] == yamlConf.AdminUOH {
+		if strconv.Itoa(cpf.UserId) == s && cpf.Message[:1] == yamlConf.AdminUserOrderHeader {
 			return true
 		}
 	}
@@ -108,12 +120,12 @@ func (cpf *PostForm) AdminEvent() {
 	// 群消息
 	if cpf.MessageType == "group" {
 		// demo 复读消息
-		_, _ = cpf.SendGroupMsg(cpf.Message)
+		//_, _ = cpf.SendGroupMsg(cpf.Message)
 	}
 	// 私聊消息
 	if cpf.MessageType == "private" {
 		// demo 复读消息
-		_, _ = cpf.SendMsg(cpf.MessageType, cpf.Message)
+		//_, _ = cpf.SendMsg(cpf.MessageType, cpf.Message)
 	}
 }
 
@@ -183,7 +195,7 @@ func (cpf *PostForm) SendMenu() {
 
 // MsgAddApiToken 添加token
 func (cpf *PostForm) MsgAddApiToken() {
-	gdb := db.NewDB()
+	//gdb := db.NewDB()
 	if res, token := gdb.InsertRevueApiToken(strconv.Itoa(cpf.UserId), 4); res {
 		_, _ = cpf.SendMsg(cpf.MessageType, "创建成功,你的token是:"+token+"\n注意,该token只能给自己发送消息")
 	} else {

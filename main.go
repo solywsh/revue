@@ -38,11 +38,11 @@ type revueApiPost struct {
 
 // 监听go-cqhttp动作并以此做出反应
 func listenFromCqhttp(c *gin.Context) {
-	var response cq.PostForm
-	if c.ShouldBindBodyWith(&response, binding.JSON) == nil {
+	var cpf cq.PostForm
+	if c.ShouldBindBodyWith(&cpf, binding.JSON) == nil {
 		// 对message事件进行响应
-		if response.PostType == "message" {
-			response.MsgEvent()
+		if cpf.PostType == "message" {
+			go cpf.MsgEvent()
 		}
 	}
 }
