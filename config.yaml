@@ -3,25 +3,24 @@ listenPort: '5000'
 # api的url,也就是部署go-cqhttp的url
 urlHeader: 'http://127.0.0.1:5700'
 # qq机器人的qq号
-selfId: '3056159050'
+selfId: ''
 # 设置管理员
 adminUser:
-  - '1228014966'
+  - ''
 # 管理员命令头,默认"$",则命令类似于"$start"
 # 用于区分是否为命令(虽然具体的命令没有实现就是了)
 adminUserOrderHeader: '$'
 # 监听的qq群
 listenGroup:
-  - '758796599'
-  - '1103372786'
+  - ''
 # 正向鉴权,即向go-cqhttp客户端发送消息时进行鉴权
 forwardAuthentication:
   enable: true # true\false
-  token: 'lmtss'
+  token: ''
 # 反向鉴权,即接收go-cqhttp客户端消息时进行鉴权
 reverseAuthentication:
   enable: true # true\false
-  secret: 'sditr'
+  secret: ''
 # revue机器人接口相关
 revue:
   enable: true # true\false
