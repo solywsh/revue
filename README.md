@@ -2,14 +2,17 @@
 
 > 基于go-cqhttp，在使用前请先配置并运行[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)。本项目为go-cqhttp反向端。
 
-## 关于接口
+## 测试接口
 
-revue提供了消息发送接口，为方便测试，这里提供一个已经部署好的示例：
+revue提供了消息发送接口，为方便测试，这里提供一个已经部署好的示例，请按照以下步骤操作：
 
-添加revue`3056159050`为好友，向revues私聊发送`/help`根据提示获取`token`。然后向`http://revue.magicode123.cn:5000/send_private_msg`发送对应字段
+1. 添加revue测试QQ机器人`3056159050`为好友。
+2. 向revues私聊发送`/help`根据提示获取`token`，或直接发送`/getToken`获取。
+3. 向`http://revue.magicode123.cn:5000/send_private_msg`发送对应字段。
 
-| token   | 获取的token                                                  |
+| key     | 功能                                                         |
 | ------- | ------------------------------------------------------------ |
+| token   | 获取的token                                                  |
 | user_id | qq号，token和qq为绑定状态，也就是一个token只能对一个qq号发送消息 |
 | message | 消息内容，也可以支持表情，语音，短视频等内容，发送格式为CQ码，参照[CQcode\|帮助中心 ](https://docs.go-cqhttp.org/cqcode/#cqcode) |
 
@@ -23,7 +26,7 @@ revue提供了消息发送接口，为方便测试，这里提供一个已经部
 }
 ```
 
-以下提供几种请求方式
+以下提供几种demo
 
 ### python-requests
 
@@ -34,9 +37,9 @@ import json
 url = "http://revue.magicode123.cn:5000/send_private_msg"
 
 payload = json.dumps({
-  "token": "e0c405ae-95e9-4039-9f1f-4f39f7e6bde4",
-  "user_id": "1228014966",
-  "message": "测试"
+  "token": "<token>",
+  "user_id": "<QQ号>",
+  "message": "<消息内容|支持CQcode>"
 })
 headers = {
   'Content-Type': 'application/json'
@@ -63,9 +66,9 @@ func main() {
 	post, err := client.R().SetHeaders(map[string]string{
 		"Content-Type": "application/json",
 	}).SetBody(map[string]string{
-		"token":   "e0c405ae-95e9-4039-9f1f-4f39f7e6bde4",
-		"user_id": "1228014966",
-		"message": "测试",
+		"token":   "<token>",
+		"user_id": "<QQ号>",
+		"message": "<消息内容|支持CQcode>",
 	}).Post(url)
 	if err != nil {
 		return
@@ -79,9 +82,9 @@ func main() {
 ```js
 var axios = require('axios');
 var data = JSON.stringify({
-  "token": "e0c405ae-95e9-4039-9f1f-4f39f7e6bde4",
-  "user_id": "1228014966",
-  "message": "测试"
+  "token": "<token>",
+  "user_id": "<QQ号>",
+  "message": "<消息内容|支持CQcode>"
 });
 
 var config = {
@@ -102,7 +105,7 @@ axios(config)
 });
 ```
 
-## 配置运行
+## 自行配置运行
 
 先配置并运行`go-cqhttp`，其中默认开启中间件密钥以及反向post密钥，注意配置以下内容：
 
