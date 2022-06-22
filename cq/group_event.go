@@ -1,7 +1,9 @@
 package cq
 
 import (
+	"github.com/go-resty/resty/v2"
 	"github.com/solywsh/qqBot-revue/db"
+	"github.com/thedevsaddam/gojsonq"
 	"strconv"
 	"strings"
 )
@@ -71,5 +73,56 @@ func (cpf *PostForm) JudgeListenGroup() bool {
 func (cpf *PostForm) AutoGroupMsg() {
 	if res, kr := gdb.SearchKeywordsReply(cpf.Message); res {
 		_, _ = cpf.SendGroupMsg(kr.Msg)
+	}
+}
+
+// Music163 根据关键词获取网易云id
+func Music163(keywords string) (bool, string) {
+	url := "http://music.cyrilstudio.top/search"
+	client := resty.New()
+	get, err := client.R().SetQueryParams(map[string]string{
+		"keywords": keywords,
+		"limit":    "1",
+	}).Get(url)
+	if err != nil {
+		return false, ""
+	} else {
+		rJson := gojsonq.New().JSONString(string(get.Body()))
+		if res := rJson.Reset().Find("result.songs.[0].id"); res != nil {
+			return true, strconv.Itoa(int(res.(float64)))
+		} else {
+			return false, ""
+		}
+	}
+}
+
+// GroupEvent 群消息事件
+func (cpf *PostForm) GroupEvent() {
+	//cpf.RepeatOperation() // 对adminUSer复读防止风控
+	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
+	switch {
+	// demo
+	case cpf.Message == "叫两声":
+		_, _ = cpf.SendGroupMsg("汪汪")
+	case strings.HasPrefix(cpf.Message, "查找音乐"):
+		// 查找音乐
+		cpf.FindMusicEvent()
+	case cpf.Message == "开始添加":
+		// 触发添加自动回复
+		cpf.KeywordsReplyAddEvent(1, 0)
+	case strings.HasPrefix(cpf.Message, "删除自动回复:"):
+		// 删除自动回复
+		cpf.KeywordsReplyDeleteEvent()
+	case strings.HasPrefix(cpf.Message, "搜索答案"):
+		// 搜索答案
+		cpf.GetAnswer()
+	default:
+		// 添加自动回复(关键词/回复内容)
+		if res, kr := gdb.GetKeywordsReplyFlag(strconv.Itoa(cpf.UserId)); res {
+			cpf.KeywordsReplyAddEvent(kr.Flag+1, kr.ID)
+		} else {
+			// 自动回复
+			cpf.AutoGroupMsg()
+		}
 	}
 }

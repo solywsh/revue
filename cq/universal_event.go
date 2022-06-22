@@ -4,40 +4,8 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/thedevsaddam/gojsonq"
-	"strconv"
 	"strings"
 )
-
-// GroupEvent 群消息事件
-func (cpf *PostForm) GroupEvent() {
-	// cpf.RepeatOperation() // 对adminUSer复读防止风控
-	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
-	switch {
-	// demo
-	case cpf.Message == "叫两声":
-		_, _ = cpf.SendGroupMsg("汪汪")
-	case strings.HasPrefix(cpf.Message, "查找音乐"):
-		// 查找音乐
-		cpf.FindMusicEvent()
-	case cpf.Message == "开始添加":
-		// 触发添加自动回复
-		cpf.KeywordsReplyAddEvent(1, 0)
-	case strings.HasPrefix(cpf.Message, "删除自动回复:"):
-		// 删除自动回复
-		cpf.KeywordsReplyDeleteEvent()
-	case strings.HasPrefix(cpf.Message, "搜索答案"):
-		// 搜索答案
-		cpf.GetAnswer()
-	default:
-		// 添加自动回复(关键词/回复内容)
-		if res, kr := gdb.GetKeywordsReplyFlag(strconv.Itoa(cpf.UserId)); res {
-			cpf.KeywordsReplyAddEvent(kr.Flag+1, kr.ID)
-		} else {
-			// 自动回复
-			cpf.AutoGroupMsg()
-		}
-	}
-}
 
 // MsgEvent 对message事件进行相应
 func (cpf *PostForm) MsgEvent() {
@@ -49,7 +17,6 @@ func (cpf *PostForm) MsgEvent() {
 	// 群消息进行响应
 	if cpf.MessageType == "group" {
 		if ok := cpf.JudgeListenGroup(); ok {
-
 			// 发送菜单
 			if cpf.Message == "/help" {
 				cpf.SendMenu()
