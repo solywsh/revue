@@ -2,7 +2,23 @@
 
 > 基于go-cqhttp，在使用前请先配置并运行[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)。本项目为go-cqhttp反向端。
 
-## 测试接口
+## 支持功能
+
+- 私聊
+  - 消息发送接口
+- 群聊
+  - 答案查询：`搜索答案[question]`
+  - 音乐搜索（目前只支持163）：`音乐搜索[keyword]`
+  - 关键词回复
+    - 添加：`开始添加`
+    - 删除：`删除自动回复:[keyword]`
+    - 触发：`keyword`
+- 管理员
+  - bash命令执行：`$bash <command>`
+- ![img](http://cdnimg.violetwsh.com/img/X2D_IQA~B2PGUQX3KM4U29B.png)正在开发
+  - 定时任务
+
+## 消息发送接口
 
 revue提供了消息发送接口，为方便测试，这里提供一个已经部署好的示例，请按照以下步骤操作：
 
@@ -171,13 +187,3 @@ Database:
   path: './data.db'
 ```
 
-## 功能
-
-根据在私聊和群里发送`/help`获取功能提示。目前提供的功能有：
-
-- 查找音乐
-- 关键词回复
-
-准备开发的功能有：
-
-- 定时任务(如提醒打卡)
