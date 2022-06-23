@@ -29,3 +29,25 @@ func (cpf *PostForm) MsgDeleteApiToken() {
 		_, _ = cpf.SendMsg(cpf.MessageType, "删除失败,可能数据库没有对应的信息")
 	}
 }
+
+func (cpf *PostForm) PrivateEvent() {
+	// 发送菜单
+	if cpf.Message == "/help" {
+		cpf.SendMenu()
+	}
+	// /getToken 创建对应token
+	if cpf.Message == "/getToken" {
+		cpf.MsgAddApiToken() // 添加对应apiToken
+		return
+	}
+	// /resetToken 重置对应token
+	if cpf.Message == "/resetToken" {
+		cpf.MsgResetApiToken()
+		return
+	}
+	// /deleteToken 删除对应token
+	if cpf.Message == "/deleteToken" {
+		cpf.MsgDeleteApiToken()
+		return
+	}
+}

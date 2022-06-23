@@ -24,6 +24,7 @@ func (cpf *PostForm) MsgEvent() {
 			}
 			// 如果是监听qq群列表的才做出相应
 			cpf.GroupEvent()
+			return
 		}
 		// 对不是监听qq群列表的消息做出相应
 
@@ -31,25 +32,7 @@ func (cpf *PostForm) MsgEvent() {
 	}
 	// 对私聊进行响应
 	if cpf.MessageType == "private" {
-		// 发送菜单
-		if cpf.Message == "/help" {
-			cpf.SendMenu()
-		}
-		// /getToken 创建对应token
-		if cpf.Message == "/getToken" {
-			cpf.MsgAddApiToken() // 添加对应apiToken
-			return
-		}
-		// /resetToken 重置对应token
-		if cpf.Message == "/resetToken" {
-			cpf.MsgResetApiToken()
-			return
-		}
-		// /deleteToken 删除对应token
-		if cpf.Message == "/deleteToken" {
-			cpf.MsgDeleteApiToken()
-			return
-		}
+		cpf.PrivateEvent()
 	}
 }
 

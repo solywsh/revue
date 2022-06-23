@@ -96,9 +96,17 @@ func Music163(keywords string) (bool, string) {
 	}
 }
 
+// GetProgramAlmanac 得到今天黄历
+func (cpf *PostForm) GetProgramAlmanac() {
+	_, err := cpf.SendMsg(cpf.MessageType, gdb.GetProgrammerAlmanac())
+	if err != nil {
+		return
+	}
+}
+
 // GroupEvent 群消息事件
 func (cpf *PostForm) GroupEvent() {
-	//cpf.RepeatOperation() // 对adminUSer复读防止风控
+	cpf.RepeatOperation() // 对adminUSer复读防止风控
 	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
 	switch {
 	// demo
@@ -110,6 +118,9 @@ func (cpf *PostForm) GroupEvent() {
 	case cpf.Message == "开始添加":
 		// 触发添加自动回复
 		cpf.KeywordsReplyAddEvent(1, 0)
+	case cpf.Message == "程序员黄历":
+		// 发送程序员黄历
+		cpf.GetProgramAlmanac()
 	case strings.HasPrefix(cpf.Message, "删除自动回复:"):
 		// 删除自动回复
 		cpf.KeywordsReplyDeleteEvent()
