@@ -41,6 +41,8 @@ func getOld() string {
 		{"name": "写技术文章", "good": "新的水文即将诞生", "bad": "你的博文会被抄袭"},
 	}
 	var good, bad string
+	// 随机种子
+	rand.Seed(time.Now().Unix())
 	for i := 0; i < 4; i++ {
 		index := rand.Intn(len(activities))
 		if i%2 == 0 {
@@ -63,6 +65,8 @@ func getDate() string {
 // 得到方位
 func getDirections() string {
 	directions := []string{"北方", "东北方", "东方", "东南方", "南方", "西南方", "西方", "西北方"}
+	// 随机种子
+	rand.Seed(time.Now().Unix())
 	return directions[rand.Intn(len(directions))]
 }
 
@@ -85,6 +89,8 @@ func getApp() string {
 		"你有多久没去蓝鸟了", "小黑盒上你愿望单的游戏正在更新", "你需要去学习强国刷积分", "去知乎键政一波",
 		"晚餐用美团点个外卖", "是不是该去淘宝剁手一波了", "到点了,请打开网易云", "今天也要keep哟",
 	}
+	// 随机种子
+	rand.Seed(time.Now().Unix())
 	return App[rand.Intn(len(App))]
 }
 
@@ -101,11 +107,15 @@ func getSmoke() string {
 		"玉溪",
 		"一根华子",
 	}
+	// 随机种子
+	rand.Seed(time.Now().Unix())
 	return smokes[rand.Intn(len(smokes))]
 }
 
 // NewCalendar 得到日历的集合
 func NewCalendar() (res string) {
+	// 随机种子
+	rand.Seed(time.Now().Unix())
 	event := []string{getDrink(), getApp(), getSmoke()}
 	index := rand.Intn(len(event))
 	res += getDate() + "\n" + getOld()
