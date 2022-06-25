@@ -6,6 +6,7 @@ import (
 	"github.com/thedevsaddam/gojsonq"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // KeywordsReplyAddEvent 关键词添加事件处理
@@ -104,9 +105,22 @@ func (cpf *PostForm) GetProgramAlmanac() {
 	}
 }
 
+func (cpf *PostForm) GetDivination() {
+	ok, tag := gdb.GetDivination(strconv.Itoa(cpf.UserId))
+	if ok {
+		cpf.SendMsg(cpf.MessageType, "婚丧嫁娶亲友疾病编程测试\n升职跳槽陨石核弹各类吉凶\n\n请心中默念所求之事,4s后发送结果...")
+		time.Sleep(4 * time.Second)
+		res := GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 所求运势为:" + tag
+		cpf.SendMsg(cpf.MessageType, res)
+	} else {
+		res := GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 今日已求过签了,再求就不灵了"
+		cpf.SendMsg(cpf.MessageType, res)
+	}
+}
+
 // GroupEvent 群消息事件
 func (cpf *PostForm) GroupEvent() {
-	cpf.RepeatOperation() // 对adminUSer复读防止风控
+	// cpf.RepeatOperation() // 对adminUSer复读防止风控
 	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
 	switch {
 	// demo
@@ -121,6 +135,9 @@ func (cpf *PostForm) GroupEvent() {
 	case cpf.Message == "程序员黄历":
 		// 发送程序员黄历
 		cpf.GetProgramAlmanac()
+	case cpf.Message == "求签":
+		// 求签
+		cpf.GetDivination()
 	case strings.HasPrefix(cpf.Message, "删除自动回复:"):
 		// 删除自动回复
 		cpf.KeywordsReplyDeleteEvent()

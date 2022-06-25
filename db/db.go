@@ -1,7 +1,9 @@
 package db
 
 import (
+	"fmt"
 	"github.com/solywsh/qqBot-revue/conf"
+	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -52,6 +54,14 @@ type ProgrammerAlmanac struct {
 	Almanac string //黄历内容
 }
 
+// Divination 求签
+type Divination struct {
+	ID     uint   `gorm:"primaryKey;autoIncrement"`
+	Date   string //日期
+	Tag    string //求签结果
+	UserId string //用户id,QQ号
+}
+
 // GormDb 这里对GormDb重新封装了一下
 type GormDb struct {
 	DB *gorm.DB
@@ -59,6 +69,8 @@ type GormDb struct {
 
 // NewDB 重新封装
 func NewDB() (gb *GormDb) {
+	// 读取配置
+	yamlConfig, _ := conf.NewConf("./config.yaml")
 	// 定义gorm日志
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -69,14 +81,30 @@ func NewDB() (gb *GormDb) {
 			Colorful:                  false,         // 禁用彩色打印
 		},
 	)
-	// 读取配置
-	yamlConfig, _ := conf.NewConf("./config.yaml")
+
 	gb = new(GormDb) // 由于定义的是地址,在使用前需要先分配内存
-	gb.DB, _ = gorm.Open(
-		sqlite.Open(yamlConfig.Database.Path),
-		&gorm.Config{Logger: newLogger})
+	if yamlConfig.Database.Sqlite.Enable {
+		fmt.Println("检测到使用sqlite数据库")
+		// 使用sqlite数据库
+		gb.DB, _ = gorm.Open(
+			sqlite.Open(yamlConfig.Database.Sqlite.Path),
+			&gorm.Config{Logger: newLogger})
+	} else if yamlConfig.Database.Mysql.Enable {
+		// 使用mysql数据库
+		mysqlConf := yamlConfig.Database.Mysql
+		dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s&parseTime=True&loc=Local",
+			mysqlConf.Username, mysqlConf.Password, mysqlConf.Address, mysqlConf.Dbname, mysqlConf.Charset)
+		fmt.Println("检测到使用了mysql数据库,链接dsn为:", dsn)
+		gb.DB, _ = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: newLogger})
+	} else {
+		// 如果没有启用数据库直接退出程序
+		log.Printf("请在config.yaml启用一个数据库!")
+		os.Exit(0)
+	}
 	// 自动迁移,如果数据库不存在对应表，则创建
-	err := gb.DB.AutoMigrate(RevueConfig{}, KeywordsReply{}, RevueApiToken{}, ProgrammerAlmanac{})
+	err := gb.DB.AutoMigrate(
+		RevueConfig{}, KeywordsReply{}, RevueApiToken{},
+		ProgrammerAlmanac{}, Divination{})
 	if err != nil {
 		return nil
 	}

@@ -39,7 +39,24 @@ type Revue struct {
 
 // Database 数据库相关
 type Database struct {
-	Path string `yaml:"path"`
+	Sqlite Sqlite `yaml:"sqlite"`
+	Mysql  Mysql  `yaml:"mysql"`
+}
+
+// Sqlite 数据库
+type Sqlite struct {
+	Enable bool   `yaml:"enable"`
+	Path   string `yaml:"path"`
+}
+
+// Mysql 数据库
+type Mysql struct {
+	Dbname   string `yaml:"dbname"`
+	Charset  string `yaml:"charset"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Enable   bool   `yaml:"enable"`
+	Address  string `yaml:"address"`
 }
 
 func NewConf(yamlPath string) (conf *Config, err error) {

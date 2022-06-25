@@ -5,7 +5,8 @@
 ## 支持功能
 
 - 私聊
-  - 消息发送接口
+  - 消息发送api
+  - 答案查询：`搜索答案[question]`
 - 群聊
   - 答案查询：`搜索答案[question]`
   - 音乐搜索（目前只支持163）：`音乐搜索[keyword]`
@@ -13,8 +14,10 @@
     - 添加：`开始添加`
     - 删除：`删除自动回复:[keyword]`
     - 触发：`keyword`
+  - 程序员黄历：`程序员黄历`
+  - 求运势：`求签`
 - 管理员
-  - bash命令执行：`$bash <command>`
+  - bash命令执行：`$bash <command>`（注意）
 - ![img](http://cdnimg.violetwsh.com/img/X2D_IQA~B2PGUQX3KM4U29B.png)正在开发
   - 定时任务
 
@@ -152,7 +155,7 @@ servers:
           secret: '<反向鉴权密钥>'        # 密钥
 ```
 
-接下来配置`[revue]config.yaml`
+接下来配置`[revue]config.yaml`，在`qqBot-revue`下创建`config.yaml`文件，配置以下内容:
 
 ```yaml
 # 监听端口
@@ -183,7 +186,16 @@ revue:
   enable: true # true\false
 # 数据库相关
 Database:
-  # 数据库路径
-  path: './data.db'
+  # 当sqlite和mysql都为enable时,sqlite优先级大于mysql
+  sqlite:
+    enable: false # true\false
+    path: './data.db'
+  mysql:
+    enable: true # true\false
+    address: '' # 地址:端口
+    dbname: '' # 数据库名
+    charset: 'utf8mb4'
+    username: '' # 数据库用户名
+    password: '' # 数据库密码
 ```
 

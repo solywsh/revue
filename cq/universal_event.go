@@ -43,14 +43,18 @@ func (cpf *PostForm) SendMenu() {
 		s += "revueApi 相关(私聊执行命令):\n"
 		s += "[/getToken] 获取token\n"
 		s += "[/resetToken] 重置token\n"
-		s += "[/deleteToken] 删除token"
+		s += "[/deleteToken] 删除token\n"
+		s += "其他:\n"
+		s += "[搜索答案{关键词}] 搜索答案\n"
 		_, _ = cpf.SendMsg(cpf.MessageType, s)
 	} else if cpf.MessageType == "group" {
 		s += "群聊菜单:\n"
 		s += "[开始添加] 添加自动回复\n"
 		s += "[删除自动回复:{关键词}] 删除自动回复\n"
 		s += "[查找音乐{关键词}] 查找音乐(暂时只支持163)\n"
-		s += "[搜索答案{关键词}] 搜索答案"
+		s += "[搜索答案{关键词}] 搜索答案\n"
+		s += "[程序员黄历] 显示今天黄历\n"
+		s += "[求签] 今日运势\n"
 		_, _ = cpf.SendMsg(cpf.MessageType, s)
 	}
 }
