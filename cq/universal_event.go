@@ -55,6 +55,7 @@ func (cpf *PostForm) SendMenu() {
 		s += "[搜索答案{关键词}] 搜索答案\n"
 		s += "[程序员黄历] 显示今天黄历\n"
 		s += "[求签] 今日运势\n"
+		s += "[无内鬼来点{关键词}] 发送二刺螈图片\n"
 		_, _ = cpf.SendMsg(cpf.MessageType, s)
 	}
 }

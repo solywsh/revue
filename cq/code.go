@@ -27,3 +27,8 @@ func GetCqCodeMusic(musicType, musicId string) string {
 	// musicType : qq 163 xm
 	return "[CQ:music,type=" + musicType + ",id=" + musicId + "]"
 }
+
+// GetCqCodeImg 分享图片
+func GetCqCodeImg(url string) string {
+	return "[CQ:image,file=" + url + "]"
+}

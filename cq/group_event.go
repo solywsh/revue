@@ -118,6 +118,37 @@ func (cpf *PostForm) GetDivination() {
 	}
 }
 
+// randomHImg 获取随机图片 r18 = 0 非r18,r18 = 1 为r18, r18g = 2 混合
+func randomHImg(r18 int, tag string) (bool, string) {
+	client := resty.New()
+	post, err := client.R().SetQueryParams(map[string]string{
+		"r18": strconv.Itoa(r18),
+		"num": "1",
+		"tag": tag,
+	}).Post("https://api.lolicon.app/setu/v2")
+	if err != nil {
+		return false, "请求失败,可能是服务器高峰期"
+	}
+	postJson := gojsonq.New().JSONString(post.String())
+	imgUrl := postJson.Reset().Find("data.[0].urls.original")
+	if imgUrl != nil {
+		return true, imgUrl.(string)
+	}
+	return false, "解析url失败,可能是服务器高峰期"
+}
+
+func (cpf *PostForm) HImgEvent(r18 int, tag string) {
+
+	cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" 排队搜索中...")
+
+	if ok, res := randomHImg(r18, tag); ok {
+		cpf.SendMsg(cpf.MessageType, GetCqCodeImg(res))
+	} else {
+		// 发生错误了
+		cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" "+res)
+	}
+}
+
 // GroupEvent 群消息事件
 func (cpf *PostForm) GroupEvent() {
 	// cpf.RepeatOperation() // 对adminUSer复读防止风控
@@ -138,6 +169,15 @@ func (cpf *PostForm) GroupEvent() {
 	case cpf.Message == "求签":
 		// 求签
 		cpf.GetDivination()
+	case cpf.Message == "无内鬼来点涩图":
+		// 涩图事件,非r18
+		cpf.HImgEvent(0, "")
+	case cpf.Message == "无内鬼来点色图":
+		// 色图事件,r18
+		cpf.HImgEvent(1, "")
+	case strings.HasPrefix(cpf.Message, "无内鬼来点"):
+		// 涩图事件,搜索标签tag
+		cpf.HImgEvent(2, strings.TrimPrefix(cpf.Message, "无内鬼来点"))
 	case strings.HasPrefix(cpf.Message, "删除自动回复:"):
 		// 删除自动回复
 		cpf.KeywordsReplyDeleteEvent()
