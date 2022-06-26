@@ -120,14 +120,13 @@ func (cpf *PostForm) GetDivination() {
 
 // randomHImg 获取随机图片 r18 = 0 非r18,r18 = 1 为r18, r18g = 2 混合
 func randomHImg(r18 int, tag string) (bool, string) {
-	client := resty.New()
+	client := resty.New().SetTimeout(time.Second * 5) // 设置超时时间
 	post, err := client.R().SetQueryParams(map[string]string{
 		"r18": strconv.Itoa(r18),
-		"num": "1",
 		"tag": tag,
 	}).Post("https://api.lolicon.app/setu/v2")
 	if err != nil {
-		return false, "请求失败,可能是服务器高峰期"
+		return false, "请求失败,可能是服务器高峰期(｡ ́︿ ̀｡)"
 	}
 	postJson := gojsonq.New().JSONString(post.String())
 	imgUrl := postJson.Reset().Find("data.[0].urls.original")
@@ -140,12 +139,23 @@ func randomHImg(r18 int, tag string) (bool, string) {
 func (cpf *PostForm) HImgEvent(r18 int, tag string) {
 
 	cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" 排队搜索中...")
-
 	if ok, res := randomHImg(r18, tag); ok {
 		cpf.SendMsg(cpf.MessageType, GetCqCodeImg(res))
 	} else {
-		// 发生错误了
-		cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" "+res)
+		// 发生错误,从其他图床拿一张非涩图
+		client := resty.New()
+		get, err := client.R().Get("https://api.ixiaowai.cn/mcapi/mcapi.php?return=json")
+		if err != nil {
+			return
+		}
+		getJson := gojsonq.New().JSONString(string(get.Body()))
+		if getJson.Reset().Find("code").(string) == "200" {
+			cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" "+
+				res+" "+GetCqCodeImg(getJson.Reset().Find("imgurl").(string)))
+		} else {
+			cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" "+res)
+		}
+
 	}
 }
 
