@@ -153,8 +153,8 @@ func ginRevueAuthentication() gin.HandlerFunc {
 }
 
 func main() {
-	// gin.DisableConsoleColor() // 不显示彩色日志
-	// gin.SetMode(gin.ReleaseMode) // 生产模式,log精简化
+	gin.DisableConsoleColor()    // 不显示彩色日志
+	gin.SetMode(gin.ReleaseMode) // 生产模式,log精简化
 	router := gin.Default()
 	// 监听动作并做出反应
 	router.POST("/", ginReverseAuthentication(), listenFromCqhttp)
