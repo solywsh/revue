@@ -3,4 +3,4 @@ config.bak.yaml
 /misc
 /config.bak1.yaml
 /config.yaml
-/data.db
+/data.db!/service/himg2mongo/mongoInfo
