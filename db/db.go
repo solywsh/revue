@@ -3,13 +3,19 @@ package db
 import (
 	"fmt"
 	"github.com/solywsh/qqBot-revue/conf"
+	"github.com/solywsh/qqBot-revue/service/wzxy"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
 	"os"
+	"sync"
 	"time"
+)
+
+var (
+	dbOnce sync.Once
 )
 
 // RevueConfig 根据命令对机器人的一些配置进行动态配置
@@ -69,46 +75,49 @@ type GormDb struct {
 
 // NewDB 重新封装
 func NewDB() (gb *GormDb) {
-	// 读取配置
-	yamlConfig, _ := conf.NewConf("./config.yaml")
-	// 定义gorm日志
-	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold:             time.Second,   // 慢 SQL 阈值
-			LogLevel:                  logger.Silent, // Log level
-			IgnoreRecordNotFoundError: true,          // 忽略ErrRecordNotFound（记录未找到）错误
-			Colorful:                  false,         // 禁用彩色打印
-		},
-	)
+	dbOnce.Do(func() {
+		// 读取配置
+		yamlConfig, _ := conf.NewConf("./config.yaml")
+		// 定义gorm日志
+		newLogger := logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+			logger.Config{
+				SlowThreshold:             time.Second,   // 慢 SQL 阈值
+				LogLevel:                  logger.Silent, // Log level
+				IgnoreRecordNotFoundError: true,          // 忽略ErrRecordNotFound（记录未找到）错误
+				Colorful:                  false,         // 禁用彩色打印
+			},
+		)
 
-	gb = new(GormDb) // 由于定义的是地址,在使用前需要先分配内存
-	if yamlConfig.Database.Sqlite.Enable {
-		fmt.Println("检测到使用sqlite数据库")
-		// 使用sqlite数据库
-		gb.DB, _ = gorm.Open(
-			sqlite.Open(yamlConfig.Database.Sqlite.Path),
-			&gorm.Config{Logger: newLogger})
-	} else if yamlConfig.Database.Mysql.Enable {
-		// 使用mysql数据库
-		mysqlConf := yamlConfig.Database.Mysql
-		dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s&parseTime=True&loc=Local",
-			mysqlConf.Username, mysqlConf.Password, mysqlConf.Address, mysqlConf.Dbname, mysqlConf.Charset)
-		fmt.Println("检测到使用了mysql数据库,链接dsn为:", dsn)
-		gb.DB, _ = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: newLogger})
-	} else {
-		// 如果没有启用数据库直接退出程序
-		log.Printf("请在config.yaml启用一个数据库!")
-		os.Exit(0)
-	}
-	// 自动迁移,如果数据库不存在对应表，则创建
-	err := gb.DB.AutoMigrate(
-		RevueConfig{}, KeywordsReply{}, RevueApiToken{},
-		ProgrammerAlmanac{}, Divination{})
-	if err != nil {
-		return nil
-	}
-	// 不存在则自动创建(理论上配置只有一条记录，所以ID只能为1)
-	gb.DB.Where(RevueConfig{ID: 1}).Attrs(RevueConfig{ID: 1, ReplyEnable: true, MusicEnable: true}).FirstOrCreate(&RevueConfig{})
+		gb = new(GormDb) // 由于定义的是地址,在使用前需要先分配内存
+		if yamlConfig.Database.Sqlite.Enable {
+			fmt.Println("检测到使用sqlite数据库")
+			// 使用sqlite数据库
+			gb.DB, _ = gorm.Open(
+				sqlite.Open(yamlConfig.Database.Sqlite.Path),
+				&gorm.Config{Logger: newLogger})
+		} else if yamlConfig.Database.Mysql.Enable {
+			// 使用mysql数据库
+			mysqlConf := yamlConfig.Database.Mysql
+			dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s&parseTime=True&loc=Local",
+				mysqlConf.Username, mysqlConf.Password, mysqlConf.Address, mysqlConf.Dbname, mysqlConf.Charset)
+			fmt.Println("检测到使用了mysql数据库,链接dsn为:", dsn)
+			gb.DB, _ = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: newLogger})
+		} else {
+			// 如果没有启用数据库直接退出程序
+			log.Printf("请在config.yaml启用一个数据库!")
+			os.Exit(0)
+		}
+		// 自动迁移,如果数据库不存在对应表，则创建
+		err := gb.DB.AutoMigrate(
+			RevueConfig{}, KeywordsReply{}, RevueApiToken{},
+			ProgrammerAlmanac{}, Divination{}, wzxy.UserWzxy{}, wzxy.TokenWzxy{})
+		if err != nil {
+			log.Printf("数据库迁移失败:%s", err)
+			return
+		}
+		// 不存在则自动创建(理论上配置只有一条记录，所以ID只能为1)
+		gb.DB.Where(RevueConfig{ID: 1}).Attrs(RevueConfig{ID: 1, ReplyEnable: true, MusicEnable: true}).FirstOrCreate(&RevueConfig{})
+	})
 	return gb
 }

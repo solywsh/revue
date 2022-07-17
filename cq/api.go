@@ -80,6 +80,26 @@ func formatAccessUrl(str string) string {
 	}
 }
 
+//
+//// PublicSendPrivateMsg 对外的发送私聊消息接口，给其他包调用
+//func PublicSendPrivateMsg(userId, msg string) error {
+//	client := resty.New()
+//	post, err := client.R().SetQueryParams(map[string]string{
+//		"user_id":     userId,
+//		"group_id":    "",
+//		"message":     msg,
+//		"auto_escape": "false",
+//	}).Post(formatAccessUrl("/send_private_msg"))
+//	if err != nil {
+//		return err
+//	}
+//	rJson := gojsonq.New().JSONString(string(post.Body()))
+//	if rJson.Reset().Find("retcode") != nil && rJson.Reset().Find("retcode").(float64) != 0.0 {
+//		return fmt.Errorf(string(post.Body()))
+//	}
+//	return nil
+//}
+
 // SendPrivateMsg 发送私聊消息
 func (cpf *PostForm) SendPrivateMsg(msg string) (string, error) {
 	client := resty.New()

@@ -3,6 +3,7 @@ package cq
 import (
 	"github.com/go-resty/resty/v2"
 	"github.com/solywsh/qqBot-revue/db"
+	"github.com/solywsh/qqBot-revue/mongo_service"
 	"github.com/thedevsaddam/gojsonq"
 	"strconv"
 	"strings"
@@ -138,6 +139,27 @@ func randomHImg(r18 int, tag string) (bool, string) {
 
 func (cpf *PostForm) HImgEvent(r18 int, tag string) {
 
+	// 私有数据库启用时,并且tag为空时
+	if yamlConf.Database.Mongo.HImgDB.Enable && tag == "" {
+		var flag bool
+		if r18 == 0 {
+			flag = false
+		} else {
+			flag = true
+		}
+		if mongo, ok := mongo_service.NewMongo(); ok {
+			res, err := mongo.GetLoLiCon(flag)
+			if err != nil {
+				cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+"发生错误:"+err.Error())
+			} else {
+				cpf.SendMsg(cpf.MessageType, GetCqCodeImg(res.Urls.Original))
+			}
+		} else {
+			cpf.SendMsg(cpf.MessageType, "mongo调用失败")
+		}
+		return
+	}
+
 	cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" 排队搜索中...")
 	if ok, res := randomHImg(r18, tag); ok {
 		cpf.SendMsg(cpf.MessageType, GetCqCodeImg(res))
@@ -161,7 +183,7 @@ func (cpf *PostForm) HImgEvent(r18 int, tag string) {
 
 // GroupEvent 群消息事件
 func (cpf *PostForm) GroupEvent() {
-	// cpf.RepeatOperation() // 对adminUSer复读防止风控
+	cpf.RepeatOperation() // 对adminUSer复读防止风控
 	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
 	switch {
 	// demo
