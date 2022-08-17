@@ -1,4 +1,6 @@
-package wzxy
+package constants
+
+// 我在校园相关
 
 type UserWzxy struct {
 	Jwsession       string // JWSESSION

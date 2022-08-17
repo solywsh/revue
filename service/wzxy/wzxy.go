@@ -10,8 +10,40 @@ import (
 	"time"
 )
 
-func getDate() string {
-	return time.Now().Format("20060102")
+type UserWzxy struct {
+	Jwsession       string // JWSESSION
+	JwsessionStatus bool   // JWSESSION是否有效
+	Status          int    // 状态码 0 默认定时执行 1 手动执行
+	Token           string // token,有效应验证
+	UserId          string // 用户ID/QQ
+	Name            string // 用户名
+
+	MorningCheckEnable   bool   // 晨检打卡是否开启
+	MorningCheckTime     string // 晨检打卡时间
+	MorningCheckLastDate string // 晨检打卡最后打卡时间
+
+	AfternoonCheckEnable   bool   // 午检打卡是否开启
+	AfternoonCheckTime     string // 午检打卡时间
+	AfternoonCheckLastDate string // 午检打卡最后打卡时间
+
+	EveningCheckEnable   bool   // 晚检打卡是否开启
+	EveningCheckTime     string // 晚检打卡时间
+	EveningCheckLastTime string // 晚检打卡最后打卡时间
+
+	Province  string // 省份
+	City      string // 城市
+	UserAgent string // UserAgent
+
+	Deadline string // 过期时间
+}
+
+type TokenWzxy struct {
+	Token        string // token,用于注册
+	Deadline     string // 过期时间
+	CreateUser   string // 创建人,默认只能管理员
+	Status       int    // 状态,0未使用,1使用,2可多次使用
+	Times        int    // 可使用次数
+	Organization string // 组织机构,默认为private,多次使用时需要修改
 }
 
 func getSha256(src string) string {
@@ -34,6 +66,9 @@ func (u UserWzxy) CheckOperate(seq int) int {
 		"seq":             strconv.Itoa(seq),
 		"temperature":     "36.5",
 		"userId":          "",
+		"towncode":        "",
+		"citycode":        "",
+		"areacode":        "",
 		"latitude":        "34.108216",
 		"longitude":       "108.605084",
 		"country":         "中国",
@@ -105,6 +140,9 @@ func (u UserWzxy) doEveningCheck(signId, logId string) int {
 		"signId":    signId,
 		"city":      "西安市",
 		"id":        logId,
+		"towncode":  "",
+		"citycode":  "",
+		"areacode":  "",
 		"latitude":  "34.10154079861111",
 		"longitude": "108.65831163194444",
 		"country":   "中国",
@@ -144,63 +182,3 @@ func (u UserWzxy) EveningCheckOperate() int {
 		return -4 // 未知错误
 	}
 }
-
-//
-//func operation() {
-//	dataNow := getDate()
-//	dateTmp := ""
-//	var err error
-//	eventMap := make(map[string]map[string]int) // 记录今日任务执行flag
-//
-//	for {
-//		dataNow = getDate()
-//		// 第二天执行刷新
-//		if dataNow != dateTmp {
-//			dateTmp = getDate()
-//			yamlConfig, err = NewConf("./config.yaml")
-//			if err != nil {
-//				return // 读取错误退出
-//			}
-//			// 刷新flag,0为今日未执行
-//			for _, user := range yamlConfig.User {
-//				eventMap[user.Name] = map[string]int{"morning": 0}
-//				eventMap[user.Name] = map[string]int{"afternoon": 0}
-//				eventMap[user.Name] = map[string]int{"evening": 0}
-//			}
-//		}
-//		timeNow := time.Now().Format("15:04:05")
-//		for _, user := range yamlConfig.User {
-//			if user.MorningCheck.Enable &&
-//				timeNow < user.MorningCheck.EndTime &&
-//				timeNow > user.MorningCheck.CheckTime &&
-//				eventMap[user.Name]["morning"] != 1 {
-//				eventMap[user.Name]["morning"] = 1 // flag 置为1
-//				// 晨检
-//				go user.CheckOperate(1)
-//			}
-//
-//			if user.AfternoonCheck.Enable &&
-//				timeNow < user.AfternoonCheck.EndTime &&
-//				timeNow > user.AfternoonCheck.CheckTime &&
-//				eventMap[user.Name]["afternoon"] != 1 {
-//				eventMap[user.Name]["afternoon"] = 1 // flag 置为1
-//				// 午检
-//				go user.CheckOperate(2)
-//			}
-//
-//			if user.EveningCheck.Enable &&
-//				timeNow < user.EveningCheck.EndTime &&
-//				timeNow > user.EveningCheck.CheckTime &&
-//				eventMap[user.Name]["evening"] != 1 {
-//				eventMap[user.Name]["evening"] = 1
-//				// 晚检
-//				go user.EveningCheckOperate()
-//			}
-//		}
-//		time.Sleep(10 * time.Second)
-//	}
-//}
-
-//func main() {
-//	operation()
-//}

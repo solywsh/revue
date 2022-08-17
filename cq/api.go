@@ -66,7 +66,7 @@ var (
 
 // 初始化配置
 func init() {
-	yamlConf, _ = conf.NewConf("./config.yaml") // 得到配置文件
+	yamlConf = conf.NewConf() // 得到配置文件
 	//gdb = new(db.GormDb)
 	gdb = db.NewDB() // 初始化操作数据库
 }

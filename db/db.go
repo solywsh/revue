@@ -16,6 +16,7 @@ import (
 
 var (
 	dbOnce sync.Once
+	gb     *GormDb
 )
 
 // RevueConfig 根据命令对机器人的一些配置进行动态配置
@@ -74,10 +75,10 @@ type GormDb struct {
 }
 
 // NewDB 重新封装
-func NewDB() (gb *GormDb) {
+func NewDB() *GormDb {
 	dbOnce.Do(func() {
 		// 读取配置
-		yamlConfig, _ := conf.NewConf("./config.yaml")
+		yamlConfig := conf.NewConf()
 		// 定义gorm日志
 		newLogger := logger.New(
 			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -88,10 +89,10 @@ func NewDB() (gb *GormDb) {
 				Colorful:                  false,         // 禁用彩色打印
 			},
 		)
-
 		gb = new(GormDb) // 由于定义的是地址,在使用前需要先分配内存
 		if yamlConfig.Database.Sqlite.Enable {
-			fmt.Println("检测到使用sqlite数据库")
+
+			log.Println("检测到使用sqlite数据库")
 			// 使用sqlite数据库
 			gb.DB, _ = gorm.Open(
 				sqlite.Open(yamlConfig.Database.Sqlite.Path),
@@ -101,7 +102,7 @@ func NewDB() (gb *GormDb) {
 			mysqlConf := yamlConfig.Database.Mysql
 			dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s&parseTime=True&loc=Local",
 				mysqlConf.Username, mysqlConf.Password, mysqlConf.Address, mysqlConf.Dbname, mysqlConf.Charset)
-			fmt.Println("检测到使用了mysql数据库,链接dsn为:", dsn)
+			log.Println("检测到使用了mysql数据库,链接dsn为:", dsn)
 			gb.DB, _ = gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: newLogger})
 		} else {
 			// 如果没有启用数据库直接退出程序
@@ -118,6 +119,7 @@ func NewDB() (gb *GormDb) {
 		}
 		// 不存在则自动创建(理论上配置只有一条记录，所以ID只能为1)
 		gb.DB.Where(RevueConfig{ID: 1}).Attrs(RevueConfig{ID: 1, ReplyEnable: true, MusicEnable: true}).FirstOrCreate(&RevueConfig{})
+		log.Println("数据库连接成功")
 	})
 	return gb
 }

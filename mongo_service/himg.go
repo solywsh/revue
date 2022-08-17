@@ -2,7 +2,8 @@ package mongo_service
 
 import (
 	"context"
-	"fmt"
+	"log"
+
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -37,12 +38,12 @@ func (m *Mongo) GetLoLiCon(r18 bool) (*LoliconData, error) {
 		{"$match": bson.M{"r18": r18}}, {"$sample": bson.M{"size": 1}},
 	})
 	if err != nil {
-		fmt.Println("aggregate error:", err)
+		log.Println("Error", err)
 		return nil, err
 	}
 	err = aggregate.All(context.TODO(), &result)
 	if err != nil {
-		fmt.Println("Decode error:", err)
+		log.Println("Decode error", err)
 		return nil, err
 	}
 	return &result[0], nil

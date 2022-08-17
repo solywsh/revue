@@ -11,15 +11,19 @@ import (
 
 var (
 	mongoOnce sync.Once
+	m         *Mongo
+	f         bool
 )
 
 type Mongo struct {
 	Client *mongo.Client
 }
 
-func NewMongo() (m *Mongo, f bool) {
+func NewMongo() (*Mongo, bool) {
 	mongoOnce.Do(func() {
-		yamlConf, err := conf.NewConf("./config.yaml")
+		var err error
+		m = new(Mongo)
+		yamlConf := conf.NewConf()
 		// Set DbClient options
 		clientOptions := options.Client().ApplyURI(yamlConf.Database.Mongo.HImgDB.Url)
 		// Connect to MongoDB
@@ -27,7 +31,7 @@ func NewMongo() (m *Mongo, f bool) {
 		// Check the connection
 		err = m.Client.Ping(context.TODO(), nil)
 		if err != nil {
-			log.Println("NewMongo error:", err)
+			log.Println("New Mongo Error: ", err)
 			f = false
 			return
 		} else {

@@ -12,6 +12,7 @@ import (
 	"github.com/solywsh/qqBot-revue/db"
 	"github.com/thedevsaddam/gojsonq"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -24,8 +25,8 @@ var (
 
 // 初始化配置
 func init() {
-	yamlConf, _ = conf.NewConf("./config.yaml") // 得到配置文件
-	gdb = db.NewDB()                            // 初始化操作数据库
+	yamlConf = conf.NewConf() // 得到配置文件
+	gdb = db.NewDB()          // 初始化操作数据库
 }
 
 // revue发送消息api,用于接收
@@ -153,8 +154,8 @@ func ginRevueAuthentication() gin.HandlerFunc {
 }
 
 func main() {
-	gin.DisableConsoleColor()    // 不显示彩色日志
-	gin.SetMode(gin.ReleaseMode) // 生产模式,log精简化
+	gin.DisableConsoleColor() // 不显示彩色日志
+	// gin.SetMode(gin.ReleaseMode) // 生产模式,log精简化
 	router := gin.Default()
 	// 监听动作并做出反应
 	router.POST("/", ginReverseAuthentication(), listenFromCqhttp)
@@ -162,6 +163,7 @@ func main() {
 	router.POST("/send_private_msg", ginRevueAuthentication(), listenFromSendPrivateMsg)
 	err := router.Run("0.0.0.0:" + yamlConf.ListenPort)
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 }

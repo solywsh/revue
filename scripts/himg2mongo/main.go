@@ -16,8 +16,8 @@ import (
 var (
 	MaxClient    = 40 // 最大并发数
 	client       = resty.New()
-	URL          = "https://api.lolicon.app/setu/v2" // 涩图 URL
-	DbUrl        = ""                                // mongo URL
+	URL          = "https://api.lolicon.app/setu/v2"                     // 涩图 URL
+	DbUrl        = "mongodb://revue:himgrevue@81.68.236.195:27017/revue" // mongo URL
 	DbClient     *mongo.Client
 	DbCollection *mongo.Collection
 	LccCh        = make(chan *Lolicon, 2*MaxClient)

@@ -183,7 +183,7 @@ func (cpf *PostForm) HImgEvent(r18 int, tag string) {
 
 // GroupEvent 群消息事件
 func (cpf *PostForm) GroupEvent() {
-	cpf.RepeatOperation() // 对adminUSer复读防止风控
+	// cpf.RepeatOperation() // 对adminUSer复读防止风控
 	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
 	switch {
 	// demo

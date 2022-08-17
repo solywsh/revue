@@ -9,6 +9,7 @@ import (
 
 var (
 	configOnce sync.Once
+	conf       *Config
 )
 
 // Config 配置相关
@@ -76,19 +77,19 @@ type HImgDB struct {
 	Url    string `yaml:"url"`
 }
 
-func NewConf(yamlPath string) (conf *Config, err error) {
+const yamlPath = "./config.yaml"
+
+func NewConf() *Config {
 	configOnce.Do(func() {
-		conf = &Config{}
 		yamlFile, err := ioutil.ReadFile(yamlPath)
 		if err != nil {
 			log.Println(err)
-			return
 		}
+		conf = new(Config)
 		err = yaml.Unmarshal(yamlFile, conf)
 		if err != nil {
-			log.Println(err)
-			return
+			log.Println("unmarshal error", err)
 		}
 	})
-	return conf, err
+	return conf
 }
