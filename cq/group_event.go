@@ -54,9 +54,9 @@ func (cpf PostForm) KeywordsReplyDeleteEvent() {
 // FindMusicEvent 查找音乐事件处理
 func (cpf PostForm) FindMusicEvent() {
 	if res, musicId := Music163(strings.TrimPrefix(cpf.Message, "查找音乐")); res {
-		_, _ = cpf.SendGroupMsg(GetCqCodeMusic("163", musicId))
+		cpf.SendMsg(cpf.MessageType, GetCqCodeMusic("163", musicId))
 	} else {
-		_, _ = cpf.SendGroupMsg("没有找到")
+		cpf.SendMsg(cpf.MessageType, "没有找到")
 	}
 }
 
@@ -183,33 +183,13 @@ func (cpf *PostForm) HImgEvent(r18 int, tag string) {
 
 // GroupEvent 群消息事件
 func (cpf *PostForm) GroupEvent() {
-	// cpf.RepeatOperation() // 对adminUSer复读防止风控
-	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
 	switch {
 	// demo
 	case cpf.Message == "叫两声":
-		_, _ = cpf.SendGroupMsg("汪汪")
-	case strings.HasPrefix(cpf.Message, "查找音乐"):
-		// 查找音乐
-		cpf.FindMusicEvent()
+		cpf.SendGroupMsg("汪汪")
 	case cpf.Message == "开始添加":
 		// 触发添加自动回复
 		cpf.KeywordsReplyAddEvent(1, 0)
-	case cpf.Message == "程序员黄历":
-		// 发送程序员黄历
-		cpf.GetProgramAlmanac()
-	case cpf.Message == "求签":
-		// 求签
-		cpf.GetDivination()
-	case cpf.Message == "无内鬼来点涩图":
-		// 涩图事件,非r18
-		cpf.HImgEvent(0, "")
-	case cpf.Message == "无内鬼来点色图":
-		// 色图事件,r18
-		cpf.HImgEvent(1, "")
-	case strings.HasPrefix(cpf.Message, "无内鬼来点"):
-		// 涩图事件,搜索标签tag
-		cpf.HImgEvent(2, strings.TrimPrefix(cpf.Message, "无内鬼来点"))
 	case strings.HasPrefix(cpf.Message, "删除自动回复:"):
 		// 删除自动回复
 		cpf.KeywordsReplyDeleteEvent()

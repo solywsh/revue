@@ -11,6 +11,7 @@ import (
 )
 
 type UserWzxy struct {
+	ID              uint   `gorm:"primaryKey;autoIncrement"`
 	Jwsession       string // JWSESSION
 	JwsessionStatus bool   // JWSESSION是否有效
 	Status          int    // 状态码 0 默认定时执行 1 手动执行
@@ -34,16 +35,17 @@ type UserWzxy struct {
 	City      string // 城市
 	UserAgent string // UserAgent
 
-	Deadline string // 过期时间
+	Deadline time.Time // 过期时间
 }
 
 type TokenWzxy struct {
-	Token        string // token,用于注册
-	Deadline     string // 过期时间
-	CreateUser   string // 创建人,默认只能管理员
-	Status       int    // 状态,0未使用,1使用,2可多次使用
-	Times        int    // 可使用次数
-	Organization string // 组织机构,默认为private,多次使用时需要修改
+	ID           uint      `gorm:"primaryKey;autoIncrement"`
+	Token        string    // token,用于注册
+	Deadline     time.Time // 过期时间
+	CreateUser   string    // 创建人,默认只能管理员
+	Status       int       // 状态,0未使用,1已经使用,2可多次使用(0和1针对单次使用)
+	Times        int       // 可使用次数	默认1次
+	Organization string    // 组织机构,默认为private,多次使用时需要修改
 }
 
 func getSha256(src string) string {

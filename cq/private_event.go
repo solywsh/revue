@@ -2,7 +2,6 @@ package cq
 
 import (
 	"strconv"
-	"strings"
 )
 
 // MsgAddApiToken 添加token
@@ -36,8 +35,6 @@ func (cpf *PostForm) MsgDeleteApiToken() {
 func (cpf *PostForm) PrivateEvent() {
 	switch {
 	// 发送菜单
-	case cpf.Message == "/help":
-		cpf.SendMenu()
 	// /getToken 创建对应token
 	case cpf.Message == "/getToken":
 		cpf.MsgAddApiToken() // 添加对应apiToken
@@ -47,8 +44,5 @@ func (cpf *PostForm) PrivateEvent() {
 	// /deleteToken 删除对应token
 	case cpf.Message == "/deleteToken":
 		cpf.MsgDeleteApiToken()
-	// 搜索答案
-	case strings.HasPrefix(cpf.Message, "搜索答案"):
-		cpf.GetAnswer()
 	}
 }
