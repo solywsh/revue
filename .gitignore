@@ -2,3 +2,4 @@
 *.yaml
 /misc
 /data.db!/service/himg2mongo/mongoInfo
+*.test
