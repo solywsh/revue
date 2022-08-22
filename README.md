@@ -22,8 +22,9 @@
     - `无内鬼来点{keyword1|keyword2|...}`：根据关键词搜索，exp：`无内鬼来点白毛`
 - 管理员
   - bash命令执行：`$bash <command>`（注意）
-- ![img](http://cdnimg.violetwsh.com/img/X2D_IQA~B2PGUQX3KM4U29B.png)正在开发
-  - 定时任务(交给HB来完成了)
+- 正在开发
+  - ~~定时任务(交给HB来完成了)~~
+  - 我在校园打卡
 
 ## 消息发送接口
 
