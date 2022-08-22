@@ -89,7 +89,7 @@ func listenFromSendPrivateMsg(c *gin.Context) {
 		// do event
 		var cpf cq.PostForm
 		cpf.UserId, _ = strconv.Atoi(rap.UserId)
-		msg, err := cpf.SendMsg("private", rap.Message)
+		msg, err := cpf.SendPrivateMsg(rap.Message)
 		if err != nil {
 			c.JSON(
 				http.StatusInternalServerError,

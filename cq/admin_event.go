@@ -73,7 +73,7 @@ func (cpf *PostForm) AdminHelp() {
 	msg += "[" + yamlConf.AdminUserOrderHeader + "wzxyct]创建我在校园token,输入" + yamlConf.AdminUserOrderHeader + "wzxyct -h显示更多信息\n"
 	msg += "[" + yamlConf.AdminUserOrderHeader + "wzxydt]删除我在校园token,输入" + yamlConf.AdminUserOrderHeader + "wzxydt -h显示更多信息\n"
 	msg += "[" + yamlConf.AdminUserOrderHeader + "wzxyft]查找我在校园token,输入" + yamlConf.AdminUserOrderHeader + "wzxyft -h显示更多信息\n"
-	_, _ = cpf.SendMsg(cpf.MessageType, msg)
+	cpf.SendMsg(msg)
 }
 
 // BashCommand 对admin执行bash命令
@@ -89,7 +89,7 @@ func (cpf *PostForm) BashCommand() {
 		}
 		return string(out[:])
 	}(cmd)
-	_, _ = cpf.SendMsg(cpf.MessageType, res)
+	cpf.SendMsg(res)
 }
 
 // 创建我在校园token 格式为$wzxyct:alive_days:user:status:times:organization
@@ -106,7 +106,7 @@ func (cpf *PostForm) CreateWzxyToken() {
 			"\tstatus:状态,0,1区分单次使用状态,2为多次使用,默认0(单词未使用)\n" +
 			"\ttimes:次数,默认1\n" +
 			"\torganization:组织,默认default\n"
-		_, _ = cpf.SendMsg(cpf.MessageType, msg)
+		cpf.SendMsg(msg)
 		return
 	}
 	flag := true
@@ -183,15 +183,15 @@ func (cpf *PostForm) CreateWzxyToken() {
 		flag = false
 	}
 	if !flag {
-		_, _ = cpf.SendMsg(cpf.MessageType, "格式错误,格式为$wzxyct:alive_days:user:status:times:organization")
+		cpf.SendMsg("格式错误,格式为$wzxyct:alive_days:user:status:times:organization")
 		return
 	}
 	wt.Token = uuid.NewV4().String()
 	count, err := gdb.InsetWzxyTokenOne(wt)
 	if err != nil || count <= 0 {
-		_, _ = cpf.SendMsg(cpf.MessageType, "创建失败")
+		cpf.SendMsg("创建失败")
 	} else {
-		_, _ = cpf.SendMsg(cpf.MessageType, "创建成功,信息为:\n"+printWzxyToken(wt))
+		cpf.SendMsg("创建成功,信息为:\n" + printWzxyToken(wt))
 	}
 }
 
@@ -208,7 +208,7 @@ func (cpf *PostForm) DeleteWzxyToken() {
 			"\torganization:组织\n"
 		msg += "注意:\n" +
 			"\t该命令会对所有符合条件的token进行删除,但确保至少有一个信息有效\n"
-		_, _ = cpf.SendMsg(cpf.MessageType, msg)
+		cpf.SendMsg(msg)
 		return
 	}
 	var wt wzxy.TokenWzxy
@@ -232,24 +232,24 @@ func (cpf *PostForm) DeleteWzxyToken() {
 		}
 	}
 	if !flag {
-		_, _ = cpf.SendMsg(cpf.MessageType, "格式错误,格式为:$wzxydt:token:user:organization")
+		cpf.SendMsg("格式错误,格式为:$wzxydt:token:user:organization")
 		return
 	}
 	if tag > 0 {
 		many, i, err := gdb.FindWzxyTokenMany(wt)
 		if err != nil {
-			_, _ = cpf.SendMsg(cpf.MessageType, "删除失败")
+			cpf.SendMsg("删除失败")
 			return
 		}
 		for _, tokenWzxy := range many {
 			one, err := gdb.DeleteWzxyTokenOne(tokenWzxy)
 			if err != nil || one <= 0 {
-				_, _ = cpf.SendMsg(cpf.MessageType, tokenWzxy.Token+"删除失败")
+				cpf.SendMsg(tokenWzxy.Token + "删除失败")
 			}
 		}
-		cpf.SendMsg(cpf.MessageType, "影响了"+strconv.Itoa(int(i))+"条")
+		cpf.SendMsg("影响了" + strconv.Itoa(int(i)) + "条")
 	} else {
-		cpf.SendMsg(cpf.MessageType, "格式错误,请确保至少有一个参数带有值")
+		cpf.SendMsg("格式错误,请确保至少有一个参数带有值")
 		return
 	}
 }
@@ -266,7 +266,7 @@ func (cpf PostForm) FindWzxyToken() {
 			"\torganization:组织\n"
 		msg += "注意:\n" +
 			"\t确保至少有一个信息有效\n"
-		_, _ = cpf.SendMsg(cpf.MessageType, msg)
+		cpf.SendMsg(msg)
 		return
 	}
 	flag := true
@@ -295,13 +295,13 @@ func (cpf PostForm) FindWzxyToken() {
 		flag = false
 	}
 	if !flag {
-		_, _ = cpf.SendMsg(cpf.MessageType, "格式错误,格式为:$wzxyft:token:user:organization")
+		cpf.SendMsg("格式错误,格式为:$wzxyft:token:user:organization")
 		return
 	}
 	if tag > 0 {
 		many, i, err := gdb.FindWzxyTokenMany(wt)
 		if i == 0 || err != nil {
-			_, _ = cpf.SendMsg(cpf.MessageType, "没有找到相关结果")
+			cpf.SendMsg("没有找到相关结果")
 			return
 		}
 		msg := "查找成功,找到了" + strconv.Itoa(int(i)) + "条\n"
@@ -310,9 +310,9 @@ func (cpf PostForm) FindWzxyToken() {
 			msg += printWzxyToken(tokenWzxy)
 			msg += "=========================\n"
 		}
-		cpf.SendMsg(cpf.MessageType, msg)
+		cpf.SendMsg(msg)
 	} else {
-		cpf.SendMsg(cpf.MessageType, "格式错误,请确保至少有一个参数带有值")
+		cpf.SendMsg("格式错误,请确保至少有一个参数带有值")
 		return
 	}
 }

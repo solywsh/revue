@@ -51,12 +51,12 @@ func (cpf *PostForm) SendMenu() {
 		s += "\t[/getToken] 获取token\n"
 		s += "\t[/resetToken] 重置token\n"
 		s += "\t[/deleteToken] 删除token\n"
-		cpf.SendMsg(cpf.MessageType, s)
+		cpf.SendMsg(s)
 	} else if cpf.MessageType == "group" {
 		s += "群聊菜单:\n"
 		s += "\t[开始添加] 添加自动回复\n"
 		s += "\t[删除自动回复:{关键词}] 删除自动回复\n"
-		cpf.SendMsg(cpf.MessageType, s)
+		cpf.SendMsg(s)
 	}
 }
 
@@ -82,7 +82,7 @@ func ProblemRepository(question string) string {
 func (cpf *PostForm) GetAnswer() {
 	question := strings.TrimPrefix(cpf.Message, "搜索答案")
 	ans := ProblemRepository(question)
-	cpf.SendMsg(cpf.MessageType, ans)
+	cpf.SendMsg(ans)
 }
 
 // CommonEvent 对通用消息响应

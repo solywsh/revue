@@ -141,44 +141,31 @@ func (cpf *PostForm) SendGroupMsg(msg string) (string, error) {
 
 // SendMsg
 //  @Description: 发送消息
-//  @param messageType 消息类型private、group,如果不传入根据传入id判断
 //  @param userId private时对方的qq
 //  @param groupId group时群号
 //  @param message 消息
 //  @param autoEscape 是否解析CQ码
 //  @return string 返回message_id
-//  @return error
 //
-func (cpf *PostForm) SendMsg(messageType, message string) (string, error) {
-	var postData map[string]string
-	if messageType == "private" {
-		postData = map[string]string{
-			"message_type": messageType,
-			"user_id":      strconv.Itoa(cpf.UserId),
-			"group_id":     "",
-			"message":      message,
-			"auto_escape":  "false",
-		}
-	} else {
-		postData = map[string]string{
-			"message_type": messageType,
-			"user_id":      "",
-			"group_id":     strconv.Itoa(cpf.GroupId),
-			"message":      message,
-			"auto_escape":  "false",
-		}
+func (cpf *PostForm) SendMsg(message string) string {
+	postData := map[string]string{
+		"message_type": cpf.MessageType,
+		"user_id":      strconv.Itoa(cpf.UserId),
+		"group_id":     strconv.Itoa(cpf.GroupId),
+		"message":      message,
+		"auto_escape":  "false",
 	}
 	client := resty.New()
 	post, err := client.R().SetQueryParams(postData).Post(formatAccessUrl("/send_msg"))
 	if err != nil {
-		return "POST ERROR", err
+		return "POST ERROR"
 	}
 	rJson := gojsonq.New().JSONString(string(post.Body()))
 	if rJson.Reset().Find("retcode") != nil && rJson.Reset().Find("retcode").(float64) != 0.0 {
-		return rJson.Reset().Find("msg").(string), fmt.Errorf(string(post.Body()))
+		return rJson.Reset().Find("msg").(string)
 	}
 	messageId := strconv.Itoa(int(rJson.Reset().Find("data.message_id").(float64)))
-	return messageId, nil
+	return messageId
 }
 
 // DeleteMsg

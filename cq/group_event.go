@@ -15,13 +15,13 @@ func (cpf *PostForm) KeywordsReplyAddEvent(rate uint, krId uint) {
 	if rate == 1 {
 		if res, kr := gdb.GetKeywordsReplyFlag(strconv.Itoa(cpf.UserId)); res {
 			if kr.Flag == 1 {
-				_, _ = cpf.SendGroupMsg("你有一个正在添加的任务,不能重复发送\"开始添加\",请设置触发关键词")
+				cpf.SendGroupMsg("你有一个正在添加的任务,不能重复发送\"开始添加\",请设置触发关键词")
 			} else if kr.Flag == 2 {
-				_, _ = cpf.SendGroupMsg("你有一个正在添加的任务,不能重复发送\"开始添加\",请为:\"" + kr.Keywords + "\"设置回复")
+				cpf.SendGroupMsg("你有一个正在添加的任务,不能重复发送\"开始添加\",请为:\"" + kr.Keywords + "\"设置回复")
 			}
 		} else {
 			gdb.UpdateKeywordsReply(db.KeywordsReply{Flag: 1, Userid: strconv.Itoa(cpf.UserId)})
-			_, _ = cpf.SendGroupMsg("开始添加,请设置关键词")
+			cpf.SendGroupMsg("开始添加,请设置关键词")
 		}
 	} else if rate == 2 {
 		if res, kr := gdb.SearchKeywordsReply(cpf.Message); res {
@@ -33,10 +33,10 @@ func (cpf *PostForm) KeywordsReplyAddEvent(rate uint, krId uint) {
 		} else {
 			gdb.UpdateKeywordsReply(db.KeywordsReply{ID: krId, Flag: 2, Userid: strconv.Itoa(cpf.UserId), Keywords: cpf.Message})
 		}
-		_, _ = cpf.SendGroupMsg("请为\"" + cpf.Message + "\"设置回复")
+		cpf.SendGroupMsg("请为\"" + cpf.Message + "\"设置回复")
 	} else if rate == 3 {
 		gdb.UpdateKeywordsReply(db.KeywordsReply{ID: krId, Flag: 3, Msg: cpf.Message, Mode: 1})
-		_, _ = cpf.SendGroupMsg("添加完成")
+		cpf.SendGroupMsg("添加完成")
 	}
 }
 
@@ -45,18 +45,18 @@ func (cpf PostForm) KeywordsReplyDeleteEvent() {
 	keywords := strings.TrimPrefix(cpf.Message, "删除自动回复:")
 	if res, kr := gdb.SearchKeywordsReply(keywords); res {
 		gdb.DeleteKeywordsReply(kr.ID)
-		_, _ = cpf.SendGroupMsg("删除\"" + keywords + "\"成功")
+		cpf.SendGroupMsg("删除\"" + keywords + "\"成功")
 	} else {
-		_, _ = cpf.SendGroupMsg("没有找到对应的关键词")
+		cpf.SendGroupMsg("没有找到对应的关键词")
 	}
 }
 
 // FindMusicEvent 查找音乐事件处理
 func (cpf PostForm) FindMusicEvent() {
 	if res, musicId := Music163(strings.TrimPrefix(cpf.Message, "查找音乐")); res {
-		cpf.SendMsg(cpf.MessageType, GetCqCodeMusic("163", musicId))
+		cpf.SendMsg(GetCqCodeMusic("163", musicId))
 	} else {
-		cpf.SendMsg(cpf.MessageType, "没有找到")
+		cpf.SendMsg("没有找到")
 	}
 }
 
@@ -74,7 +74,10 @@ func (cpf *PostForm) JudgeListenGroup() bool {
 //	AutoGroupMsg 根据群消息自动回复
 func (cpf *PostForm) AutoGroupMsg() {
 	if res, kr := gdb.SearchKeywordsReply(cpf.Message); res {
-		_, _ = cpf.SendGroupMsg(kr.Msg)
+		_, err := cpf.SendGroupMsg(kr.Msg)
+		if err != nil {
+			return
+		}
 	}
 }
 
@@ -100,22 +103,19 @@ func Music163(keywords string) (bool, string) {
 
 // GetProgramAlmanac 得到今天黄历
 func (cpf *PostForm) GetProgramAlmanac() {
-	_, err := cpf.SendMsg(cpf.MessageType, gdb.GetProgrammerAlmanac())
-	if err != nil {
-		return
-	}
+	cpf.SendMsg(gdb.GetProgrammerAlmanac())
 }
 
 func (cpf *PostForm) GetDivination() {
 	ok, tag := gdb.GetDivination(strconv.Itoa(cpf.UserId))
 	if ok {
-		cpf.SendMsg(cpf.MessageType, "婚丧嫁娶亲友疾病编程测试\n升职跳槽陨石核弹各类吉凶\n\n请心中默念所求之事,4s后发送结果...")
+		cpf.SendMsg("婚丧嫁娶亲友疾病编程测试\n升职跳槽陨石核弹各类吉凶\n\n请心中默念所求之事,4s后发送结果...")
 		time.Sleep(4 * time.Second)
 		res := GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 所求运势为:" + tag
-		cpf.SendMsg(cpf.MessageType, res)
+		cpf.SendMsg(res)
 	} else {
 		res := GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 今日已求过签了,再求就不灵了"
-		cpf.SendMsg(cpf.MessageType, res)
+		cpf.SendMsg(res)
 	}
 }
 
@@ -150,19 +150,19 @@ func (cpf *PostForm) HImgEvent(r18 int, tag string) {
 		if mongo, ok := mongo_service.NewMongo(); ok {
 			res, err := mongo.GetLoLiCon(flag)
 			if err != nil {
-				cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+"发生错误:"+err.Error())
+				cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + "发生错误:" + err.Error())
 			} else {
-				cpf.SendMsg(cpf.MessageType, GetCqCodeImg(res.Urls.Original))
+				cpf.SendMsg(GetCqCodeImg(res.Urls.Original))
 			}
 		} else {
-			cpf.SendMsg(cpf.MessageType, "mongo调用失败")
+			cpf.SendMsg("mongo调用失败")
 		}
 		return
 	}
 
-	cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" 排队搜索中...")
+	cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 排队搜索中...")
 	if ok, res := randomHImg(r18, tag); ok {
-		cpf.SendMsg(cpf.MessageType, GetCqCodeImg(res))
+		cpf.SendMsg(GetCqCodeImg(res))
 	} else {
 		// 发生错误,从其他图床拿一张非涩图
 		client := resty.New()
@@ -172,10 +172,10 @@ func (cpf *PostForm) HImgEvent(r18 int, tag string) {
 		}
 		getJson := gojsonq.New().JSONString(string(get.Body()))
 		if getJson.Reset().Find("code").(string) == "200" {
-			cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" "+
-				res+" "+GetCqCodeImg(getJson.Reset().Find("imgurl").(string)))
+			cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " " +
+				res + " " + GetCqCodeImg(getJson.Reset().Find("imgurl").(string)))
 		} else {
-			cpf.SendMsg(cpf.MessageType, GetCqCodeAt(strconv.Itoa(cpf.UserId), "")+" "+res)
+			cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " " + res)
 		}
 
 	}
