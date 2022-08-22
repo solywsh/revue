@@ -1,6 +1,4 @@
 /.idea
-config.bak.yaml
+*.yaml
 /misc
-/config.bak1.yaml
-/config.yaml
 /data.db!/service/himg2mongo/mongoInfo
