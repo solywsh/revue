@@ -19,17 +19,14 @@ type UserWzxy struct {
 	UserId          string // 用户ID/QQ
 	Name            string // 用户名
 
-	MorningCheckEnable   bool   // 晨检打卡是否开启
-	MorningCheckTime     string // 晨检打卡时间
-	MorningCheckLastDate string // 晨检打卡最后打卡时间
+	MorningCheckEnable bool   // 晨检打卡是否开启
+	MorningCheckTime   string // 晨检打卡时间
 
-	AfternoonCheckEnable   bool   // 午检打卡是否开启
-	AfternoonCheckTime     string // 午检打卡时间
-	AfternoonCheckLastDate string // 午检打卡最后打卡时间
+	AfternoonCheckEnable bool   // 午检打卡是否开启
+	AfternoonCheckTime   string // 午检打卡时间
 
-	EveningCheckEnable   bool   // 晚检打卡是否开启
-	EveningCheckTime     string // 晚检打卡时间
-	EveningCheckLastTime string // 晚检打卡最后打卡时间
+	EveningCheckEnable bool   // 晚检打卡是否开启
+	EveningCheckTime   string // 晚检打卡时间
 
 	Province  string // 省份
 	City      string // 城市
@@ -183,4 +180,59 @@ func (u UserWzxy) EveningCheckOperate() int {
 		log.Println(u.Name, "获取晚检信息失败,未知错误")
 		return -4 // 未知错误
 	}
+}
+
+func (u UserWzxy) String() string {
+	msg := "我在校园用户信息\n"
+	msg += "打卡任务:\n"
+	msg += "id:" + u.UserId + "\n"
+	msg += "name:" + u.Name + "\n"
+	msg += "token:" + u.Token + "\n"
+	msg += "jwsession:" + u.Jwsession + "\n"
+	msg += "jwsession有效性:"
+	if u.JwsessionStatus {
+		msg += "有效\n"
+	} else {
+		msg += "无效\n"
+	}
+	msg += "晨检打卡状态:"
+	if u.MorningCheckEnable {
+		msg += "开启\n"
+	} else {
+		msg += "关闭\n"
+	}
+	msg += "晨检打卡时间:" + u.MorningCheckTime + "\n"
+	msg += "午检打卡状态:"
+	if u.AfternoonCheckEnable {
+		msg += "开启\n"
+	} else {
+		msg += "关闭\n"
+	}
+	msg += "午检打卡时间:" + u.AfternoonCheckTime + "\n"
+	msg += "签到(晚检)打卡状态:"
+	if u.EveningCheckEnable {
+		msg += "开启\n"
+	} else {
+		msg += "关闭\n"
+	}
+	msg += "签到(晚检)打卡时间:" + u.EveningCheckTime + "\n"
+	return msg
+}
+
+func (wt TokenWzxy) String() string {
+	msg := "token:" + wt.Token + "\n"
+	msg += "有效期至:" + wt.Deadline.Format("2006-01-02 15:04") + "\n"
+	msg += "用户:" + wt.CreateUser + "\n"
+	if wt.Status == 0 {
+		msg += "token状态:未使用\n"
+	} else if wt.Status == 1 {
+		msg += "token状态:已使用\n"
+	} else if wt.Status == 2 {
+		msg += "token状态:多次使用\n"
+	} else {
+		msg += "token状态:未知\n"
+	}
+	msg += "剩余次数:" + strconv.Itoa(wt.Times) + "\n"
+	msg += "组织:" + wt.Organization + "\n"
+	return msg
 }

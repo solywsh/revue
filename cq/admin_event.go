@@ -191,7 +191,7 @@ func (cpf *PostForm) CreateWzxyToken() {
 	if err != nil || count <= 0 {
 		cpf.SendMsg("创建失败")
 	} else {
-		cpf.SendMsg("创建成功,信息为:\n" + printWzxyToken(wt))
+		cpf.SendMsg("创建成功,信息为:\n" + wt.String())
 	}
 }
 
@@ -307,7 +307,7 @@ func (cpf PostForm) FindWzxyToken() {
 		msg := "查找成功,找到了" + strconv.Itoa(int(i)) + "条\n"
 		for _, tokenWzxy := range many {
 			msg += "=========================\n"
-			msg += printWzxyToken(tokenWzxy)
+			msg += tokenWzxy.String()
 			msg += "=========================\n"
 		}
 		cpf.SendMsg(msg)
@@ -315,22 +315,4 @@ func (cpf PostForm) FindWzxyToken() {
 		cpf.SendMsg("格式错误,请确保至少有一个参数带有值")
 		return
 	}
-}
-
-func printWzxyToken(wt wzxy.TokenWzxy) (msg string) {
-	msg += "token:" + wt.Token + "\n"
-	msg += "有效期至:" + wt.Deadline.Format("2006-01-02 15:04") + "\n"
-	msg += "用户:" + wt.CreateUser + "\n"
-	if wt.Status == 0 {
-		msg += "token状态:未使用\n"
-	} else if wt.Status == 1 {
-		msg += "token状态:已使用\n"
-	} else if wt.Status == 2 {
-		msg += "token状态:多次使用\n"
-	} else {
-		msg += "token状态:未知\n"
-	}
-	msg += "剩余次数:" + strconv.Itoa(wt.Times) + "\n"
-	msg += "组织:" + wt.Organization + "\n"
-	return msg
 }

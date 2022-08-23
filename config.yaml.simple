@@ -1,0 +1,39 @@
+# 监听端口
+listenPort: '5000'
+# api的url,也就是部署go-cqhttp的url
+urlHeader: 'http://127.0.0.1:5700'
+# qq机器人的qq号
+selfId: 'xxxxxxxx'
+# 设置管理员
+adminUser:
+  - 'xxxxxxxxx'
+# 管理员命令头,默认"$",则命令类似于"$start"
+# 用于区分是否为命令(虽然具体的命令没有实现就是了)
+adminUserOrderHeader: '$'
+# 监听的qq群
+listenGroup:
+  - 'xxxxxxxxx'
+# 正向鉴权,即向go-cqhttp客户端发送消息时进行鉴权
+forwardAuthentication:
+  enable: true # true\false
+  token: '<正向鉴权密钥>'
+# 反向鉴权,即接收go-cqhttp客户端消息时进行鉴权
+reverseAuthentication:
+  enable: true # true\false
+  secret: '<反向鉴权密钥>'
+# revue机器人接口相关
+revue:
+  enable: true # true\false
+# 数据库相关
+Database:
+  # 当sqlite和mysql都为enable时,sqlite优先级大于mysql
+  sqlite:
+    enable: false # true\false
+    path: './data.db'
+  mysql:
+    enable: true # true\false
+    address: '' # 地址:端口
+    dbname: '' # 数据库名
+    charset: 'utf8mb4'
+    username: '' # 数据库用户名
+    password: '' # 数据库密码
