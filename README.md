@@ -21,7 +21,10 @@
     - `无内鬼来点色图`：R18图片
     - `无内鬼来点{keyword1|keyword2|...}`：根据关键词搜索，exp：`无内鬼来点白毛`
 - 管理员
-  - bash命令执行：`$bash <command>`（注意）
+  - bash命令执行：`$bash <command>`
+  - 创建我在校园token：`$wzxyct <option>`
+  - 删除我在校园token：`$wzxydt <option>`
+  - 查找我在校园token：`$wzxyft <option>`
 - 正在开发
   - ~~定时任务(交给HB来完成了)~~
   - 我在校园打卡
