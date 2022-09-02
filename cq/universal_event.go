@@ -157,7 +157,7 @@ func (cpf PostForm) HandleUserWzxy() {
 	}
 
 	// 注册任务
-	if strings.HasPrefix(cpf.Message, "wzxy -a ") {
+	if strings.HasPrefix(cpf.Message, "wzxy -a") {
 		if flag {
 			cpf.SendMsg("您已经注册过任务了")
 			return
@@ -232,7 +232,7 @@ func (cpf PostForm) HandleUserWzxy() {
 	}
 
 	// 修改jwsession
-	if strings.HasPrefix(cpf.Message, "wzxy -r ") {
+	if strings.HasPrefix(cpf.Message, "wzxy -r") {
 		if len(cmd) == 3 {
 			userWzxy.Jwsession = cmd[2]
 			userWzxy.JwsessionStatus = true
@@ -248,7 +248,7 @@ func (cpf PostForm) HandleUserWzxy() {
 		return
 	}
 
-	if strings.HasPrefix(cpf.Message, "wzxy -m ") {
+	if strings.HasPrefix(cpf.Message, "wzxy -m") {
 		if len(cmd) == 4 && (cmd[2] == "morning" || cmd[2] == "afternoon" || cmd[2] == "check") {
 			// todo check cmd[3] is time
 			switch cmd[2] {
@@ -273,7 +273,7 @@ func (cpf PostForm) HandleUserWzxy() {
 		}
 		return
 	}
-	if strings.HasPrefix(cpf.Message, "wzxy -alive ") {
+	if strings.HasPrefix(cpf.Message, "wzxy -alive") {
 		if len(cmd) == 4 {
 			t, err := time.Parse("2006-01-02 15:04:05", cmd[2]+" "+cmd[3])
 			if err != nil {
@@ -302,7 +302,7 @@ func (cpf PostForm) HandleUserWzxy() {
 		}
 		return
 	}
-	if strings.HasPrefix(cpf.Message, "wzxy -on ") ||
+	if strings.HasPrefix(cpf.Message, "wzxy -on") ||
 		strings.HasPrefix(cpf.Message, "wzxy -off ") {
 		if len(cmd) == 3 {
 			var taskStatus bool
@@ -337,7 +337,7 @@ func (cpf PostForm) HandleUserWzxy() {
 		}
 		return
 	}
-	if strings.HasPrefix(cpf.Message, "wzxy -do ") {
+	if strings.HasPrefix(cpf.Message, "wzxy -do") {
 		if len(cmd) == 3 {
 			var status int
 			switch cmd[2] {
