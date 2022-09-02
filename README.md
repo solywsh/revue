@@ -4,32 +4,34 @@
 
 ## 支持功能
 
+- API：私信发送API
+- 通用
+  - 答案查询：`搜索答案{question}`
+  - 音乐搜索（目前只支持163）：`音乐搜索{keywords}`
+  - 程序员黄历：`程序员黄历`
+  - 求运势：`求签`
+  - 涩图服务：
+    - `无内鬼来点涩图`：非R18图片
+    - `无内鬼来点色图`：R18图片
+    - `无内鬼来点{keyword1|keyword2|...}`：根据关键词搜索，exp：`无内鬼来点白毛`
+
 - 私聊
-  - 消息发送api
-  - 答案查询：`搜索答案[question]`
+  - 消息发送apiToken：`getToken/resetToken/deleteToken`
 - 群聊
-  - 答案查询：`搜索答案[question]`
-  - 音乐搜索（目前只支持163）：`音乐搜索[keyword]`
   - 关键词回复
     - 添加：`开始添加`
     - 删除：`删除自动回复:[keyword]`
     - 触发：`keyword`
-  - 程序员黄历：`程序员黄历`
-  - 求运势：`求签`
-  - 涩图：
-    - `无内鬼来点涩图`：非R18图片
-    - `无内鬼来点色图`：R18图片
-    - `无内鬼来点{keyword1|keyword2|...}`：根据关键词搜索，exp：`无内鬼来点白毛`
 - 管理员
   - bash命令执行：`$bash <command>`
-  - 创建我在校园token：`$wzxyct <option>`
-  - 删除我在校园token：`$wzxydt <option>`
-  - 查找我在校园token：`$wzxyft <option>`
+  - 我在校园签到服务token：
+    - 创建我在校园token：`$wzxyct <option>`
+    - 删除我在校园token：`$wzxydt <option>`
+    - 查找我在校园token：`$wzxyft <option>`
 - 正在开发
   - ~~定时任务(交给HB来完成了)~~
-  - 我在校园打卡
 
-## 消息发送接口
+## 私信发送接口
 
 revue提供了消息发送接口，为方便测试，这里提供一个已经部署好的示例，请按照以下步骤操作：
 
@@ -205,5 +207,11 @@ Database:
     charset: 'utf8mb4'
     username: '' # 数据库用户名
     password: '' # 数据库密码
+  mongo:
+    # 涩图数据库,如果为false则直接调用公共接口
+    # 如果为true则调用自己的接口
+    hImgDB:
+      enable: true # true\false
+      url: ''
 ```
 
