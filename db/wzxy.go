@@ -7,9 +7,14 @@ func (gb *GormDb) InsetWzxyTokenOne(t wzxy.TokenWzxy) (int64, error) {
 	return res.RowsAffected, res.Error
 }
 
-func (gb *GormDb) UpdateWzxyTokenOne(t wzxy.TokenWzxy) (int64, error) {
-	res := gb.DB.Model(&t).Updates(t)
-	return res.RowsAffected, res.Error
+func (gb *GormDb) UpdateWzxyTokenOne(t wzxy.TokenWzxy, saveZero bool) (int64, error) {
+	if saveZero {
+		res := gb.DB.Save(t)
+		return res.RowsAffected, res.Error
+	} else {
+		res := gb.DB.Model(&t).Updates(t)
+		return res.RowsAffected, res.Error
+	}
 }
 
 func (gb *GormDb) DeleteWzxyTokenOne(t wzxy.TokenWzxy) (int64, error) {
@@ -28,9 +33,14 @@ func (gb *GormDb) InsertWzxyUserOne(u wzxy.UserWzxy) (int64, error) {
 	return res.RowsAffected, res.Error
 }
 
-func (gb *GormDb) UpdateWzxyUserOne(u wzxy.UserWzxy) (int64, error) {
-	res := gb.DB.Model(&u).Updates(u)
-	return res.RowsAffected, res.Error
+func (gb *GormDb) UpdateWzxyUserOne(u wzxy.UserWzxy, saveZero bool) (int64, error) {
+	if saveZero {
+		res := gb.DB.Save(u)
+		return res.RowsAffected, res.Error
+	} else {
+		res := gb.DB.Model(&u).Updates(u)
+		return res.RowsAffected, res.Error
+	}
 }
 
 func (gb *GormDb) DeleteWzxyUserOne(u wzxy.UserWzxy) (int64, error) {

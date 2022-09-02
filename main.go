@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/solywsh/qqBot-revue/background"
 	"github.com/solywsh/qqBot-revue/conf"
 	"github.com/solywsh/qqBot-revue/cq"
 	"github.com/solywsh/qqBot-revue/db"
@@ -154,6 +155,7 @@ func ginRevueAuthentication() gin.HandlerFunc {
 }
 
 func main() {
+	background.Services()     // 启动后台服务
 	gin.DisableConsoleColor() // 不显示彩色日志
 	// gin.SetMode(gin.ReleaseMode) // 生产模式,log精简化
 	router := gin.Default()
@@ -163,7 +165,7 @@ func main() {
 	router.POST("/send_private_msg", ginRevueAuthentication(), listenFromSendPrivateMsg)
 	err := router.Run("0.0.0.0:" + yamlConf.ListenPort)
 	if err != nil {
-		log.Fatal(err)
-		return
+		log.Println(err)
 	}
+
 }

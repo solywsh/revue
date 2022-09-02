@@ -134,32 +134,95 @@ func (cpf PostForm) HandleUserWzxy() {
 		msg += "\twzxy -r [jwsession]\t修改我在校园jwsession\n"
 		msg += "\twzxy -l\t查看我在校园打卡任务\n"
 		msg += "\twzxy -alive 2006-01-02 15:04\t修改打卡任务结束时间,时间格式为2006-01-02 15:04,注意不能超过token的时间权限\n"
-		msg += "\twzxy -on/off morning/afternoon/check\t开启/关闭打卡任务\n"
+		msg += "\twzxy -on/off morning/afternoon/check/all\t开启/关闭打卡任务\n"
 		msg += "\twzxy -do morning/afternoon/check\t手动打卡\n"
 		msg += "\twzxy -h\t查看帮助\n"
 		cpf.SendMsg(msg)
 		return
 	}
+	cmd := strings.Split(cpf.Message, " ")
+
 	// 提前查找用户任务
 	userWzxy := wzxy.UserWzxy{}
+	flag := false
 	if strings.HasPrefix(cpf.Message, "wzxy -") {
 		manyUser, i, err := gdb.FindWzxyUserMany(wzxy.UserWzxy{UserId: strconv.Itoa(cpf.UserId)})
-		if err != nil && i != 1 {
-			cpf.SendMsg("查询失败,没有找到相关任务")
+		if err != nil || i != 1 {
+			flag = false
+		} else {
+			userWzxy = manyUser[0]
+			flag = true
+		}
+
+	}
+
+	// 注册任务
+	if strings.HasPrefix(cpf.Message, "wzxy -a ") {
+		if flag {
+			cpf.SendMsg("您已经注册过任务了")
 			return
 		}
-		userWzxy = manyUser[0]
+		token := cmd[2]
+		wzxyTokens, i, err := gdb.FindWzxyTokenMany(wzxy.TokenWzxy{Token: token})
+		wt := wzxyTokens[0]
+		if err != nil || i != 1 || wt.Times <= 0 || wt.Status == 1 {
+			cpf.SendMsg("注册失败,请输入一个有效的token")
+			return
+		}
+		if len(cmd) == 4 {
+			_, err := gdb.InsertWzxyUserOne(wzxy.UserWzxy{
+				Jwsession:              cmd[3],
+				JwsessionStatus:        true,
+				Token:                  cmd[2],
+				UserId:                 strconv.Itoa(cpf.UserId),
+				Name:                   cpf.Sender.Nickname,
+				MorningCheckEnable:     true,
+				MorningCheckTime:       "08:00",
+				MorningLastCheckDate:   "2006-01-02",
+				AfternoonCheckEnable:   true,
+				AfternoonCheckTime:     "13:00",
+				AfternoonLastCheckDate: "2006-01-02",
+				EveningCheckEnable:     true,
+				EveningCheckTime:       "21:30",
+				EveningLastCheckDate:   "2006-01-02",
+				Province:               "陕西省",
+				City:                   "西安市",
+				UserAgent:              "Mozilla/5.0 (iPhone; CPU iPhone OS 14_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.18(0x18001236) NetType/WIFI Language/zh_CN",
+				Deadline:               wt.Deadline,
+			})
+			if err != nil {
+				cpf.SendMsg("注册失败")
+				return
+			}
+			cpf.SendMsg("注册成功,输入wzxy -l查看具体打卡任务")
+
+			wt.Times--
+			fmt.Println(wt.Times)
+			if wt.Status == 0 {
+				wt.Status = 1
+			}
+			_, err = gdb.UpdateWzxyTokenOne(wt, true)
+		} else {
+			cpf.SendMsg("注册失败,请按照wzxy -a [token] [jwsession]格式输入")
+		}
+		return
 	}
-	cmd := strings.Split(cpf.Message, " ")
+
+	if !flag {
+		cpf.SendMsg("您还没有注册任务")
+		return
+	}
 
 	// 打印任务
 	if cpf.Message == "wzxy -l" {
-		cpf.SendMsg("当前打卡任务:\n" + userWzxy.String())
+		cpf.SendMsg(userWzxy.String())
 		return
 	}
+
 	// 删除任务
 	if cpf.Message == "wzxy -d" {
-		i, err := gdb.DeleteWzxyUserOne(wzxy.UserWzxy{UserId: strconv.Itoa(cpf.UserId)})
+
+		i, err := gdb.DeleteWzxyUserOne(userWzxy)
 		if err != nil || i != 1 {
 			cpf.SendMsg("删除失败")
 			return
@@ -167,41 +230,13 @@ func (cpf PostForm) HandleUserWzxy() {
 		cpf.SendMsg("删除成功")
 		return
 	}
-	// 注册任务
-	if strings.HasPrefix(cpf.Message, "wzxy -a ") {
-		if len(cmd) == 4 {
-			_, err := gdb.InsertWzxyUserOne(wzxy.UserWzxy{
-				Jwsession:            cmd[3],
-				JwsessionStatus:      true,
-				Status:               0,
-				Token:                cmd[2],
-				UserId:               strconv.Itoa(cpf.UserId),
-				Name:                 cpf.Sender.Nickname,
-				MorningCheckEnable:   true,
-				MorningCheckTime:     "08:00",
-				AfternoonCheckEnable: true,
-				AfternoonCheckTime:   "13:00",
-				EveningCheckEnable:   true,
-				EveningCheckTime:     "21:30",
-				Province:             "陕西省",
-				City:                 "西安市",
-				UserAgent:            "Mozilla/5.0 (iPhone; CPU iPhone OS 14_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.18(0x18001236) NetType/WIFI Language/zh_CN",
-				Deadline:             userWzxy.Deadline,
-			})
-			if err != nil {
-				cpf.SendMsg("注册失败")
-				return
-			}
-			cpf.SendMsg("注册成功,输入wzxy -l查看具体打卡任务")
-		} else {
-			cpf.SendMsg("注册失败,请按照wzxy -a [token] [jwsession]格式输入")
-		}
-		return
-	}
+
+	// 修改jwsession
 	if strings.HasPrefix(cpf.Message, "wzxy -r ") {
 		if len(cmd) == 3 {
 			userWzxy.Jwsession = cmd[2]
-			one, err := gdb.UpdateWzxyUserOne(userWzxy)
+			userWzxy.JwsessionStatus = true
+			one, err := gdb.UpdateWzxyUserOne(userWzxy, flag)
 			if err != nil || one != 1 {
 				cpf.SendMsg("修改失败")
 				return
@@ -212,6 +247,7 @@ func (cpf PostForm) HandleUserWzxy() {
 		}
 		return
 	}
+
 	if strings.HasPrefix(cpf.Message, "wzxy -m ") {
 		if len(cmd) == 4 && (cmd[2] == "morning" || cmd[2] == "afternoon" || cmd[2] == "check") {
 			// todo check cmd[3] is time
@@ -226,7 +262,7 @@ func (cpf PostForm) HandleUserWzxy() {
 				cpf.SendMsg("修改失败,请按照wzxy -m morning/afternoon/check 15:04格式输入")
 				return
 			}
-			one, err := gdb.UpdateWzxyUserOne(userWzxy)
+			one, err := gdb.UpdateWzxyUserOne(userWzxy, false)
 			if err != nil || one != 1 {
 				cpf.SendMsg("修改失败")
 				return
@@ -254,7 +290,7 @@ func (cpf PostForm) HandleUserWzxy() {
 				return
 			} else {
 				userWzxy.Deadline = t
-				one, err := gdb.UpdateWzxyUserOne(userWzxy)
+				one, err := gdb.UpdateWzxyUserOne(userWzxy, false)
 				if err != nil || one != 1 {
 					cpf.SendMsg("修改失败")
 					return
@@ -282,11 +318,15 @@ func (cpf PostForm) HandleUserWzxy() {
 				userWzxy.AfternoonCheckEnable = taskStatus
 			case "check":
 				userWzxy.EveningCheckEnable = taskStatus
+			case "all":
+				userWzxy.MorningCheckEnable = taskStatus
+				userWzxy.AfternoonCheckEnable = taskStatus
+				userWzxy.EveningCheckEnable = taskStatus
 			default:
 				cpf.SendMsg("修改失败,请按照wzxy -on morning/afternoon/check格式输入")
 				return
 			}
-			one, err := gdb.UpdateWzxyUserOne(userWzxy)
+			one, err := gdb.UpdateWzxyUserOne(userWzxy, true)
 			if err != nil || one != 1 {
 				cpf.SendMsg("修改失败")
 				return
@@ -299,19 +339,25 @@ func (cpf PostForm) HandleUserWzxy() {
 	}
 	if strings.HasPrefix(cpf.Message, "wzxy -do ") {
 		if len(cmd) == 3 {
+			var status int
 			switch cmd[2] {
 			case "morning":
-				userWzxy.CheckOperate(1)
+				status = userWzxy.CheckOperate(1)
 			case "afternoon":
-				userWzxy.CheckOperate(1)
+				status = userWzxy.CheckOperate(2)
 			case "check":
-				userWzxy.EveningCheckOperate()
+				status = userWzxy.EveningCheckOperate()
 			default:
-				cpf.SendMsg("修改失败,请按照wzxy -on morning/afternoon/check格式输入")
+				cpf.SendMsg("执行失败,请按照wzxy -on morning/afternoon/check格式输入")
 				return
 			}
+			if status == 0 {
+				cpf.SendMsg("执行成功")
+			} else {
+				cpf.SendMsg("执行失败")
+			}
 		} else {
-			cpf.SendMsg("修改失败,请按照wzxy -do morning/afternoon/check格式输入")
+			cpf.SendMsg("执行失败,请按照wzxy -do morning/afternoon/check格式输入")
 		}
 		return
 	}

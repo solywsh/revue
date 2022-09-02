@@ -14,19 +14,21 @@ type UserWzxy struct {
 	ID              uint   `gorm:"primaryKey;autoIncrement"`
 	Jwsession       string // JWSESSION
 	JwsessionStatus bool   // JWSESSION是否有效
-	Status          int    // 状态码 0 默认定时执行 1 手动执行
 	Token           string // token,有效应验证
 	UserId          string // 用户ID/QQ
 	Name            string // 用户名
 
-	MorningCheckEnable bool   // 晨检打卡是否开启
-	MorningCheckTime   string // 晨检打卡时间
+	MorningCheckEnable   bool   // 晨检打卡是否开启
+	MorningCheckTime     string // 晨检打卡时间
+	MorningLastCheckDate string // 晨检打卡日期
 
-	AfternoonCheckEnable bool   // 午检打卡是否开启
-	AfternoonCheckTime   string // 午检打卡时间
+	AfternoonCheckEnable   bool   // 午检打卡是否开启
+	AfternoonCheckTime     string // 午检打卡时间
+	AfternoonLastCheckDate string // 午检打卡日期
 
-	EveningCheckEnable bool   // 晚检打卡是否开启
-	EveningCheckTime   string // 晚检打卡时间
+	EveningCheckEnable   bool   // 晚检打卡是否开启
+	EveningCheckTime     string // 晚检打卡时间
+	EveningLastCheckDate string // 晚检打卡日期
 
 	Province  string // 省份
 	City      string // 城市
@@ -185,54 +187,56 @@ func (u UserWzxy) EveningCheckOperate() int {
 func (u UserWzxy) String() string {
 	msg := "我在校园用户信息\n"
 	msg += "打卡任务:\n"
-	msg += "id:" + u.UserId + "\n"
-	msg += "name:" + u.Name + "\n"
-	msg += "token:" + u.Token + "\n"
-	msg += "jwsession:" + u.Jwsession + "\n"
-	msg += "jwsession有效性:"
+	msg += "id：" + u.UserId + "\n"
+	msg += "name：" + u.Name + "\n"
+	msg += "token：" + u.Token + "\n"
+	msg += "jwsession：" + u.Jwsession + "\n"
+
+	msg += "jwsession有效性："
 	if u.JwsessionStatus {
 		msg += "有效\n"
 	} else {
 		msg += "无效\n"
 	}
-	msg += "晨检打卡状态:"
+	msg += "晨检打卡状态："
 	if u.MorningCheckEnable {
 		msg += "开启\n"
 	} else {
 		msg += "关闭\n"
 	}
-	msg += "晨检打卡时间:" + u.MorningCheckTime + "\n"
-	msg += "午检打卡状态:"
+	msg += "晨检打卡时间：" + u.MorningCheckTime + "\n"
+	msg += "午检打卡状态："
 	if u.AfternoonCheckEnable {
 		msg += "开启\n"
 	} else {
 		msg += "关闭\n"
 	}
-	msg += "午检打卡时间:" + u.AfternoonCheckTime + "\n"
-	msg += "签到(晚检)打卡状态:"
+	msg += "午检打卡时间：" + u.AfternoonCheckTime + "\n"
+	msg += "签到(晚检)打卡状态："
 	if u.EveningCheckEnable {
 		msg += "开启\n"
 	} else {
 		msg += "关闭\n"
 	}
-	msg += "签到(晚检)打卡时间:" + u.EveningCheckTime + "\n"
+	msg += "签到(晚检)打卡时间：" + u.EveningCheckTime + "\n"
+	msg += "有效期：" + u.Deadline.Format("2006-01-02 15:04:05") + "\n"
 	return msg
 }
 
 func (wt TokenWzxy) String() string {
-	msg := "token:" + wt.Token + "\n"
-	msg += "有效期至:" + wt.Deadline.Format("2006-01-02 15:04") + "\n"
-	msg += "用户:" + wt.CreateUser + "\n"
+	msg := "token：" + wt.Token + "\n"
+	msg += "有效期至：" + wt.Deadline.Format("2006-01-02 15:04") + "\n"
+	msg += "用户：" + wt.CreateUser + "\n"
 	if wt.Status == 0 {
-		msg += "token状态:未使用\n"
+		msg += "token状态：未使用\n"
 	} else if wt.Status == 1 {
-		msg += "token状态:已使用\n"
+		msg += "token状态：已使用\n"
 	} else if wt.Status == 2 {
-		msg += "token状态:多次使用\n"
+		msg += "token状态：多次使用\n"
 	} else {
-		msg += "token状态:未知\n"
+		msg += "token状态：未知\n"
 	}
-	msg += "剩余次数:" + strconv.Itoa(wt.Times) + "\n"
-	msg += "组织:" + wt.Organization + "\n"
+	msg += "剩余次数：" + strconv.Itoa(wt.Times) + "\n"
+	msg += "组织：" + wt.Organization + "\n"
 	return msg
 }
