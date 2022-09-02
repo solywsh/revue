@@ -47,6 +47,11 @@ type TokenWzxy struct {
 	Organization string    // 组织机构,默认为private,多次使用时需要修改
 }
 
+type MessageWzxy struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 func getSha256(src string) string {
 	sha256Bytes := sha256.Sum256([]byte(src))
 	sha256String := hex.EncodeToString(sha256Bytes[:])

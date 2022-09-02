@@ -25,9 +25,10 @@ func wzxyService() {
 			continue
 		}
 		for _, userWzxy := range many {
-			if timeNow > MorningCheckEndTime &&
+			if timeNow < MorningCheckEndTime &&
 				userWzxy.MorningCheckEnable &&
-				userWzxy.MorningCheckTime < dateNow &&
+				userWzxy.MorningCheckTime < timeNow &&
+				userWzxy.MorningLastCheckDate < dateNow &&
 				userWzxy.JwsessionStatus {
 				log.Println("wzxyService 晨检", userWzxy.Name)
 				status := userWzxy.CheckOperate(1)
@@ -52,9 +53,10 @@ func wzxyService() {
 				}
 			}
 
-			if timeNow > AfternoonCheckEndTime &&
+			if timeNow < AfternoonCheckEndTime &&
 				userWzxy.AfternoonCheckEnable &&
-				userWzxy.AfternoonCheckTime < dateNow &&
+				userWzxy.AfternoonCheckTime < timeNow &&
+				userWzxy.AfternoonLastCheckDate < dateNow &&
 				userWzxy.JwsessionStatus {
 				log.Println("wzxyService 午检", userWzxy.Name)
 				status := userWzxy.CheckOperate(2)
@@ -79,9 +81,10 @@ func wzxyService() {
 				}
 			}
 
-			if timeNow > EveningCheckEndTime &&
+			if timeNow < EveningCheckEndTime &&
 				userWzxy.EveningCheckEnable &&
-				userWzxy.EveningCheckTime < dateNow &&
+				userWzxy.EveningCheckTime < timeNow &&
+				userWzxy.EveningLastCheckDate < dateNow &&
 				userWzxy.JwsessionStatus {
 				log.Println("wzxyService 晚检", userWzxy.Name)
 				status := userWzxy.EveningCheckOperate()
@@ -110,7 +113,6 @@ func wzxyService() {
 				}
 			}
 		}
-
 		time.Sleep(5 * time.Minute)
 	}
 }
