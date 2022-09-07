@@ -48,6 +48,7 @@ func (cpf *PostForm) SendMenu() {
 	s += "\t[程序员黄历] 显示今天黄历\n"
 	s += "\t[求签] 今日运势\n"
 	s += "\t[无内鬼来点{关键词}] 发送二刺螈图片\n"
+	s += "\t[wzxy -h] 我在校园打卡相关"
 	if cpf.MessageType == "private" {
 		s += "私聊菜单:\n"
 		s += "revueApi 相关(私聊执行命令):\n"
@@ -149,15 +150,14 @@ func (cpf PostForm) HandleUserWzxy() {
 		manyUser, i, err := gdb.FindWzxyUserMany(wzxy.UserWzxy{UserId: strconv.Itoa(cpf.UserId)})
 		if err != nil || i != 1 {
 			flag = false
-		} else {
+		} else if len(manyUser) == 1 {
 			userWzxy = manyUser[0]
 			flag = true
 		}
-
 	}
 
 	// 注册任务
-	if strings.HasPrefix(cpf.Message, "wzxy -a") {
+	if strings.HasPrefix(cpf.Message, "wzxy -a") && len(cmd) > 3 {
 		if flag {
 			cpf.SendMsg("您已经注册过任务了")
 			return
@@ -194,16 +194,14 @@ func (cpf PostForm) HandleUserWzxy() {
 				cpf.SendMsg("注册失败")
 				return
 			}
-			cpf.SendMsg("注册成功,输入wzxy -l查看具体打卡任务")
-
+			cpf.SendMsg("注册成功,输入wzxy -l查看具体打卡任务信息")
 			wt.Times--
-			fmt.Println(wt.Times)
 			if wt.Status == 0 {
 				wt.Status = 1
 			}
 			_, err = gdb.UpdateWzxyTokenOne(wt, true)
 		} else {
-			cpf.SendMsg("注册失败,请按照wzxy -a [token] [jwsession]格式输入")
+			cpf.SendMsg("注册失败,请按照wzxy -a [token] [jwsession]格式重新输入")
 		}
 		return
 	}
@@ -221,7 +219,6 @@ func (cpf PostForm) HandleUserWzxy() {
 
 	// 删除任务
 	if cpf.Message == "wzxy -d" {
-
 		i, err := gdb.DeleteWzxyUserOne(userWzxy)
 		if err != nil || i != 1 {
 			cpf.SendMsg("删除失败")
@@ -243,11 +240,11 @@ func (cpf PostForm) HandleUserWzxy() {
 			}
 			cpf.SendMsg("修改成功")
 		} else {
-			cpf.SendMsg("修改失败,请按照wzxy -r [jwsession]格式输入")
+			cpf.SendMsg("修改失败,请按照wzxy -r [jwsession]格式重新输入")
 		}
 		return
 	}
-
+	// 修改打卡时间
 	if strings.HasPrefix(cpf.Message, "wzxy -m") {
 		if len(cmd) == 4 && (cmd[2] == "morning" || cmd[2] == "afternoon" || cmd[2] == "check") {
 			// todo check cmd[3] is time
@@ -273,6 +270,7 @@ func (cpf PostForm) HandleUserWzxy() {
 		}
 		return
 	}
+	// 修改打卡任务存活时间
 	if strings.HasPrefix(cpf.Message, "wzxy -alive") {
 		if len(cmd) == 4 {
 			t, err := time.Parse("2006-01-02 15:04:05", cmd[2]+" "+cmd[3])
@@ -302,6 +300,7 @@ func (cpf PostForm) HandleUserWzxy() {
 		}
 		return
 	}
+	// 开启/关闭打卡任务
 	if strings.HasPrefix(cpf.Message, "wzxy -on") ||
 		strings.HasPrefix(cpf.Message, "wzxy -off ") {
 		if len(cmd) == 3 {
@@ -337,6 +336,7 @@ func (cpf PostForm) HandleUserWzxy() {
 		}
 		return
 	}
+	// 手动执行打卡
 	if strings.HasPrefix(cpf.Message, "wzxy -do") {
 		if len(cmd) == 3 {
 			var status int

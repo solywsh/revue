@@ -160,7 +160,7 @@ func (cpf *PostForm) HImgEvent(r18 int, tag string) {
 		return
 	}
 
-	cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 排队搜索中...")
+	// cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 排队搜索中...")
 	if ok, res := randomHImg(r18, tag); ok {
 		cpf.SendMsg(GetCqCodeImg(res))
 	} else {
