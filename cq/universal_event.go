@@ -142,7 +142,10 @@ func (cpf PostForm) HandleUserWzxy() {
 		return
 	}
 	cmd := strings.Split(cpf.Message, " ")
-
+	if len(cmd) < 2 {
+		cpf.SendMsg("参数错误")
+		return
+	}
 	// 提前查找用户任务
 	userWzxy := wzxy.UserWzxy{}
 	flag := false
