@@ -129,10 +129,10 @@ func (cpf PostForm) HandleUserWzxy() {
 	if cpf.Message == "wzxy -h" {
 		msg := "我在校园打卡\n"
 		msg += "使用方法:\n"
-		msg += "\twzxy -a [token] [jwsession]\t注册我在校园打卡任务\n"
+		msg += "\twzxy -a <token> <jwsession>\t注册我在校园打卡任务\n"
 		msg += "\twzxy -d\t删除我在校园打卡任务\n"
 		msg += "\twzxy -m morning/afternoon/check 15:04\t修改[晨检/午检/签到]打卡时间,时间格式为15:04\n"
-		msg += "\twzxy -r [jwsession]\t修改我在校园jwsession\n"
+		msg += "\twzxy -r <jwsession>\t修改我在校园jwsession\n"
 		msg += "\twzxy -l\t查看我在校园打卡任务\n"
 		msg += "\twzxy -alive 2006-01-02 15:04\t修改打卡任务结束时间,时间格式为2006-01-02 15:04,注意不能超过token的时间权限\n"
 		msg += "\twzxy -on/off morning/afternoon/check/all\t开启/关闭打卡任务\n"
@@ -167,8 +167,12 @@ func (cpf PostForm) HandleUserWzxy() {
 		}
 		token := cmd[2]
 		wzxyTokens, i, err := gdb.FindWzxyTokenMany(wzxy.TokenWzxy{Token: token})
+		if err != nil || i != 1 {
+			cpf.SendMsg("注册失败,请输入一个有效的token,或是注意输入格式")
+			return
+		}
 		wt := wzxyTokens[0]
-		if err != nil || i != 1 || wt.Times <= 0 || wt.Status == 1 {
+		if wt.Times <= 0 || wt.Status == 1 {
 			cpf.SendMsg("注册失败,请输入一个有效的token")
 			return
 		}
