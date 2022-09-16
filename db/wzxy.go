@@ -2,7 +2,7 @@ package db
 
 import "github.com/solywsh/qqBot-revue/service/wzxy"
 
-func (gb *GormDb) InsetWzxyTokenOne(t wzxy.TokenWzxy) (int64, error) {
+func (gb *GormDb) InsertWzxyTokenOne(t wzxy.TokenWzxy) (int64, error) {
 	res := gb.DB.Create(&t)
 	return res.RowsAffected, res.Error
 }

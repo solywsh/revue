@@ -187,7 +187,7 @@ func (cpf *PostForm) CreateWzxyToken() {
 		return
 	}
 	wt.Token = uuid.NewV4().String()
-	count, err := gdb.InsetWzxyTokenOne(wt)
+	count, err := gdb.InsertWzxyTokenOne(wt)
 	if err != nil || count <= 0 {
 		cpf.SendMsg("创建失败")
 	} else {

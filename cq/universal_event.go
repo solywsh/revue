@@ -341,13 +341,15 @@ func (cpf PostForm) HandleUserWzxy() {
 	}
 	// 手动执行打卡
 	if strings.HasPrefix(cpf.Message, "wzxy -do") {
+
 		if len(cmd) == 3 {
 			var status int
+			var msg string
 			switch cmd[2] {
 			case "morning":
-				status = userWzxy.CheckOperate(1)
+				status, msg = userWzxy.CheckOperate(1)
 			case "afternoon":
-				status = userWzxy.CheckOperate(2)
+				status, msg = userWzxy.CheckOperate(2)
 			case "check":
 				status = userWzxy.EveningCheckOperate()
 			default:
@@ -356,6 +358,8 @@ func (cpf PostForm) HandleUserWzxy() {
 			}
 			if status == 0 {
 				cpf.SendMsg("执行成功")
+			} else if msg != "" {
+				cpf.SendMsg("执行失败," + msg)
 			} else {
 				cpf.SendMsg("执行失败")
 			}

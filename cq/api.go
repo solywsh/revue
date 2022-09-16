@@ -11,6 +11,7 @@ import (
 
 // PostForm 用于接收go-cqhttp消息
 type PostForm struct {
+	ID            uint        `gorm:"primaryKey;autoIncrement"`
 	Anonymous     interface{} `json:"anonymous"`
 	GroupId       int         `json:"group_id"`
 	Interval      int         `json:"interval"`

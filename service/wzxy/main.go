@@ -1,12 +1,11 @@
 package wzxy
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"github.com/go-resty/resty/v2"
 	"github.com/thedevsaddam/gojsonq"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -47,58 +46,31 @@ type TokenWzxy struct {
 	Organization string    // 组织机构,默认为private,多次使用时需要修改
 }
 
-type MessageWzxy struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
-func getSha256(src string) string {
-	sha256Bytes := sha256.Sum256([]byte(src))
-	sha256String := hex.EncodeToString(sha256Bytes[:])
-	return sha256String
-}
-
-func (u UserWzxy) CheckOperate(seq int) int {
-	now := time.Now()
-	signTime := strconv.FormatInt(now.UnixNano()/1e6, 10) //时间戳精确到毫秒
-	content := u.Province + "_" + signTime + "_" + u.City
-	signatureHeader := getSha256(content)
+func (u UserWzxy) CheckOperate(seq int) (res int, message string) {
 	client := resty.New()
+	postStr := ""
+	payload := strings.NewReader(`{"location":"中国/陕西省/西安市/雁塔区/鱼化寨街道/天谷七路/156/610113/156610100/610113006","t1":"是","t2":"绿色","t3":"是","type":0,"locationType":0}`)
 	post, err := client.R().SetHeaders(map[string]string{
 		"JWSESSION":  u.Jwsession,
 		"User-Agent": u.UserAgent,
-	}).SetQueryParams(map[string]string{
-		"answers":         "[\"0\"]",
-		"seq":             strconv.Itoa(seq),
-		"temperature":     "36.5",
-		"userId":          "",
-		"towncode":        "",
-		"citycode":        "",
-		"areacode":        "",
-		"latitude":        "34.108216",
-		"longitude":       "108.605084",
-		"country":         "中国",
-		"city":            "西安市",
-		"district":        "鄠邑区",
-		"province":        "陕西省",
-		"township":        "甘亭街道",
-		"street":          "东街",
-		"myArea":          "610118",
-		"timestampHeader": signTime,
-		"signatureHeader": signatureHeader,
-	}).Post("https://student.wozaixiaoyuan.com/heat/save.json")
+		"Cookie":     "JWSESSION=" + u.Jwsession,
+		"Referer":    "https://gw.wozaixiaoyuan.com/h5/mobile/health/index/health/detail?id=170000" + strconv.Itoa(seq),
+	}).SetBody(payload).Post("https://gw.wozaixiaoyuan.com/health/mobile/health/save?batch=170000" + strconv.Itoa(seq))
 	if err != nil {
 		log.Println(u.Name, "打卡失败，网络错误", "seq=", seq)
-		return -1
+		return -1, "网络错误"
 	}
-	postJson := gojsonq.New().JSONString(string(post.Body()))
+	postStr = string(post.Body())
+	postJson := gojsonq.New().JSONString(postStr)
 	if int(postJson.Reset().Find("code").(float64)) == 0 {
 		log.Println(u.Name, "打卡成功", "seq=", seq)
 		// 正常
-		return 0
+		return 0, ""
 	} else {
-		log.Println(u.Name, "打卡失败,jwsession可能失效", "seq=", seq)
-		return -2
+		log.Println(u.Name, "打卡失败", "seq=", seq, postStr)
+		res = int(postJson.Reset().Find("code").(float64))
+		message = postJson.Reset().Find("message").(string)
+		return res, message
 	}
 }
 

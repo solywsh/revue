@@ -31,7 +31,7 @@ func wzxyService() {
 				userWzxy.MorningLastCheckDate < dateNow &&
 				userWzxy.JwsessionStatus {
 				log.Println("wzxyService 晨检", userWzxy.Name)
-				status := userWzxy.CheckOperate(1)
+				status, msg := userWzxy.CheckOperate(1)
 				userId, _ := strconv.Atoi(userWzxy.UserId)
 				cpf := cq.PostForm{
 					UserId:      userId,
@@ -39,11 +39,11 @@ func wzxyService() {
 				}
 				if status == 0 {
 					cpf.SendMsg("晨检打卡成功")
-				} else if status == -1 {
-					cpf.SendMsg("晨检打卡失败,可能是网络故障，请尝试wzxy -do 手动打卡")
-				} else if status == -2 {
-					cpf.SendMsg("晨检打卡失败,可能是jwtsession，请尝试wzxy -r 更新jwtsession")
+				} else if msg == "未登录,请重新登录" {
+					cpf.SendMsg("晨检打卡失败,可能是jwtsession失效，请尝试wzxy -r 更新jwtsession")
 					userWzxy.JwsessionStatus = false
+				} else {
+					cpf.SendMsg("晨检打卡失败," + msg)
 				}
 				userWzxy.MorningLastCheckDate = dateNow
 				_, err := gdb.UpdateWzxyUserOne(userWzxy, true)
@@ -59,7 +59,7 @@ func wzxyService() {
 				userWzxy.AfternoonLastCheckDate < dateNow &&
 				userWzxy.JwsessionStatus {
 				log.Println("wzxyService 午检", userWzxy.Name)
-				status := userWzxy.CheckOperate(2)
+				status, msg := userWzxy.CheckOperate(2)
 				userId, _ := strconv.Atoi(userWzxy.UserId)
 				cpf := cq.PostForm{
 					UserId:      userId,
@@ -67,11 +67,11 @@ func wzxyService() {
 				}
 				if status == 0 {
 					cpf.SendMsg("午检打卡成功")
-				} else if status == -1 {
-					cpf.SendMsg("午检打卡失败,可能是网络故障，请尝试wzxy -do 手动打卡")
-				} else if status == -2 {
-					cpf.SendMsg("午检打卡失败,可能是jwtsession，请尝试wzxy -r 更新jwtsession")
+				} else if msg == "未登录,请重新登录" {
+					cpf.SendMsg("午检打卡失败,可能是jwtsession失效，请尝试wzxy -r 更新jwtsession")
 					userWzxy.JwsessionStatus = false
+				} else {
+					cpf.SendMsg("午检打卡失败," + msg)
 				}
 				userWzxy.AfternoonLastCheckDate = dateNow
 				_, err := gdb.UpdateWzxyUserOne(userWzxy, true)
