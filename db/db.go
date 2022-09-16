@@ -3,7 +3,6 @@ package db
 import (
 	"fmt"
 	"github.com/solywsh/qqBot-revue/conf"
-	"github.com/solywsh/qqBot-revue/cq"
 	"github.com/solywsh/qqBot-revue/service/wzxy"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
@@ -114,7 +113,7 @@ func NewDB() *GormDb {
 		err := gb.DB.AutoMigrate(
 			RevueConfig{}, KeywordsReply{}, RevueApiToken{},
 			ProgrammerAlmanac{}, Divination{}, wzxy.UserWzxy{},
-			wzxy.TokenWzxy{}, cq.PostForm{})
+			wzxy.TokenWzxy{}, PostForm{})
 		if err != nil {
 			log.Printf("数据库迁移失败:%s", err)
 			return

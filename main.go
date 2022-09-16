@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // 定义全局变量
@@ -41,10 +42,55 @@ type revueApiPost struct {
 func listenFromCqhttp(c *gin.Context) {
 	var cpf cq.PostForm
 	if c.ShouldBindBodyWith(&cpf, binding.JSON) == nil {
+		// 存储记录
+		gdb.InsertCqPostFrom(cq2db(cpf))
 		// 对message事件进行响应
 		if cpf.PostType == "message" {
 			go cpf.MsgEvent()
 		}
+	}
+}
+
+func cq2db(form cq.PostForm) db.PostForm {
+	return db.PostForm{
+		GroupId:                   form.GroupId,
+		Interval:                  form.Interval,
+		MetaEventType:             form.MetaEventType,
+		Font:                      form.Font,
+		Message:                   form.Message,
+		MessageId:                 form.MessageId,
+		MessageSeq:                form.MessageSeq,
+		MessageType:               form.MessageType,
+		PostType:                  form.PostType,
+		RawMessage:                form.RawMessage,
+		SelfId:                    form.SelfId,
+		SubType:                   form.SubType,
+		TargetId:                  form.TargetId,
+		Time:                      form.Time,
+		UserId:                    form.UserId,
+		SenderAge:                 form.Sender.Age,
+		SenderArea:                form.Sender.Area,
+		SenderCard:                form.Sender.Card,
+		SenderLevel:               form.Sender.Level,
+		SenderNickname:            form.Sender.Nickname,
+		SenderRole:                form.Sender.Role,
+		SenderSex:                 form.Sender.Sex,
+		SenderTitle:               form.Sender.Title,
+		SenderUserId:              form.Sender.UserId,
+		StatusAppEnabled:          form.Status.AppEnabled,
+		StatusAppGood:             form.Status.Good,
+		StatusAppInitialized:      form.Status.AppInitialized,
+		StatusGood:                form.Status.Good,
+		StatusOnline:              form.Status.Online,
+		StatusStatPacketReceived:  form.Status.Stat.PacketReceived,
+		StatusStatPacketSent:      form.Status.Stat.PacketSent,
+		StatusStatPacketLost:      form.Status.Stat.PacketLost,
+		StatusStatMessageReceived: form.Status.Stat.MessageReceived,
+		StatusStatMessageSent:     form.Status.Stat.MessageSent,
+		StatusStatLastMessageTime: form.Status.Stat.LastMessageTime,
+		StatusStatDisconnectTimes: form.Status.Stat.DisconnectTimes,
+		StatusStatLostTimes:       form.Status.Stat.LostTimes,
+		DataTime:                  time.Now().Format("2006-01-02 15:04:05"),
 	}
 }
 
