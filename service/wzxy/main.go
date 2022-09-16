@@ -49,7 +49,7 @@ type TokenWzxy struct {
 func (u UserWzxy) CheckOperate(seq int) (res int, message string) {
 	client := resty.New()
 	postStr := ""
-	payload := strings.NewReader(`{"location":"中国/陕西省/西安市/雁塔区/鱼化寨街道/天谷七路/156/610113/156610100/610113006","t1":"是","t2":"绿色","t3":"是","type":0,"locationType":0}`)
+	payload := strings.NewReader(`{"location":"中国/陕西省/西安市/鄠邑区/五竹街道/长庆石化路/156/610118/156610100/610118003","t1":"是","t2":"绿色","t3":"是","type":0,"locationType":0}`)
 	post, err := client.R().SetHeaders(map[string]string{
 		"JWSESSION":  u.Jwsession,
 		"User-Agent": u.UserAgent,
