@@ -57,7 +57,7 @@ func (u UserWzxy) CheckOperate(seq int) (res int, message string) {
 		"Referer":    "https://gw.wozaixiaoyuan.com/h5/mobile/health/index/health/detail?id=170000" + strconv.Itoa(seq),
 	}).SetBody(payload).Post("https://gw.wozaixiaoyuan.com/health/mobile/health/save?batch=170000" + strconv.Itoa(seq))
 	if err != nil {
-		log.Println(u.Name, "打卡失败，网络错误", "seq=", seq)
+		log.Println(u.Name, "打卡失败，网络错误", "seq=", seq, err.Error())
 		return -1, "网络错误"
 	}
 	postStr = string(post.Body())

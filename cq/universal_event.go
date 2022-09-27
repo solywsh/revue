@@ -52,9 +52,9 @@ func (cpf *PostForm) SendMenu() {
 	if cpf.MessageType == "private" {
 		s += "私聊菜单:\n"
 		s += "revueApi 相关(私聊执行命令):\n"
-		s += "\t[/getToken] 获取token\n"
-		s += "\t[/resetToken] 重置token\n"
-		s += "\t[/deleteToken] 删除token\n"
+		s += "\t[/getToken] 获取revue api token\n"
+		s += "\t[/resetToken] 重置revue api token\n"
+		s += "\t[/deleteToken] 删除revue api token\n"
 		cpf.SendMsg(s)
 	} else if cpf.MessageType == "group" {
 		s += "群聊菜单:\n"
