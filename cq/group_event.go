@@ -137,14 +137,13 @@ func randomHImg(r18 int, tag string) (bool, string) {
 	return false, "解析url失败,可能是服务器高峰期"
 }
 
-func (cpf *PostForm) HImgEvent(r18 int, tag string) {
+func (cpf *PostForm) HImgEvent(tag string) {
 
-	// 私有数据库启用时,并且tag为空时
-	if yamlConf.Database.Mongo.HImgDB.Enable && tag == "" {
+	if yamlConf.Database.Mongo.HImgDB.Enable {
 		var flag bool
-		if r18 == 0 {
+		if tag == "涩图" {
 			flag = false
-		} else {
+		} else if tag == "色图" {
 			flag = true
 		}
 		if mongo, ok := mongo_service.NewMongo(); ok {
@@ -159,9 +158,7 @@ func (cpf *PostForm) HImgEvent(r18 int, tag string) {
 		}
 		return
 	}
-
-	// cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 排队搜索中...")
-	if ok, res := randomHImg(r18, tag); ok {
+	if ok, res := randomHImg(2, tag); ok {
 		cpf.SendMsg(GetCqCodeImg(res))
 	} else {
 		// 发生错误,从其他图床拿一张非涩图

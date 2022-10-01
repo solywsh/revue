@@ -1,6 +1,7 @@
 package wzxy
 
 import (
+	"errors"
 	"github.com/go-resty/resty/v2"
 	"github.com/thedevsaddam/gojsonq"
 	"log"
@@ -13,9 +14,10 @@ type UserWzxy struct {
 	ID              uint   `gorm:"primaryKey;autoIncrement"`
 	Jwsession       string // JWSESSION
 	JwsessionStatus bool   // JWSESSION是否有效
-	Token           string // token,有效应验证
-	UserId          string // 用户ID/QQ
-	Name            string // 用户名
+
+	Token  string // token,有效应验证
+	UserId string // 用户ID/QQ
+	Name   string // 用户名
 
 	MorningCheckEnable   bool   // 晨检打卡是否开启
 	MorningCheckTime     string // 晨检打卡时间
@@ -36,6 +38,36 @@ type UserWzxy struct {
 	Deadline time.Time // 过期时间
 }
 
+type MonitorWzxy struct {
+	ID         uint   `gorm:"primaryKey;autoIncrement"`
+	UserId     string // 使用者qq 作为主键使用
+	UserWzxyId uint   // 关联UserWzxy表Id
+
+	ClassName    string // 班级名称
+	ClassGroupId string // 班级QQ群 ID
+
+	MorningRemindEnable   bool   // 晨检提醒开启
+	MorningRemindTime     string // 晨检提醒时间
+	MorningRemindLastDate string // 晨检提醒日期
+
+	AfternoonRemindEnable   bool   // 午检提醒开启
+	AfternoonRemindTime     string // 午检提醒时间
+	AfternoonRemindLastDate string // 午检提醒日期
+
+	CheckRemindEnable   bool   // 晚检提醒开启
+	CheckRemindTime     string // 晚检提醒时间
+	CheckRemindLastDate string // 晚检提醒日期
+}
+
+type ClassStudentWzxy struct {
+	ID        uint   `gorm:"primaryKey;autoIncrement"`
+	Name      string // 姓名
+	StudentId string // 学号
+	ClassName string // 班级名称
+	UserId    string // 用户ID/QQ
+	checkId   string // 签到Id,用于打卡(暂不开发)
+}
+
 type TokenWzxy struct {
 	ID           uint      `gorm:"primaryKey;autoIncrement"`
 	Token        string    // token,用于注册
@@ -44,6 +76,55 @@ type TokenWzxy struct {
 	Status       int       // 状态,0未使用,1已经使用,2可多次使用(0和1针对单次使用)
 	Times        int       // 可使用次数	默认1次
 	Organization string    // 组织机构,默认为private,多次使用时需要修改
+}
+
+func getDate() string {
+	return time.Now().Format("20060102")
+}
+
+func (u UserWzxy) GetUncheckList(seq int) ([]ClassStudentWzxy, error) {
+	client := resty.New()
+	var uncheckList []ClassStudentWzxy
+	page := 1
+	for {
+		get, err := client.R().SetHeaders(map[string]string{
+			"JWSESSION":  u.Jwsession,
+			"User-Agent": u.UserAgent,
+			"Cookie":     "JWSESSION=" + u.Jwsession,
+			"Host":       "gw.wozaixiaoyuan.com",
+		}).SetQueryParams(map[string]string{
+			"date":    getDate(),
+			"batch":   "170000" + strconv.Itoa(seq),
+			"page":    strconv.Itoa(page),
+			"size":    "20",
+			"state":   "1", //空为全部，1为未打卡，2为已经打卡，3临近高风险，4异常，5位置变动
+			"keyword": "",  // 搜索关键字
+			"type":    "0",
+		}).Get("https://gw.wozaixiaoyuan.com/health/mobile/manage/getUsers")
+		if err != nil {
+			return nil, err
+		}
+		getStr := string(get.Body())
+		getJson := gojsonq.New().JSONString(getStr)
+		if int(getJson.Reset().Find("code").(float64)) != 0 {
+			message := getJson.Reset().Find("message").(string)
+			return nil, errors.New(message)
+		}
+		uncheckData := getJson.Reset().From("data").Select("number", "name", "classes").Get()
+		if len(uncheckData.([]interface{})) == 0 {
+			break
+		}
+		for _, data := range uncheckData.([]interface{}) {
+			csw := ClassStudentWzxy{
+				Name:      data.(map[string]interface{})["name"].(string),
+				ClassName: data.(map[string]interface{})["classes"].(string),
+				StudentId: data.(map[string]interface{})["number"].(string),
+			}
+			uncheckList = append(uncheckList, csw)
+		}
+		page++
+	}
+	return uncheckList, nil
 }
 
 func (u UserWzxy) CheckOperate(seq int) (res int, message string) {
@@ -215,5 +296,35 @@ func (wt TokenWzxy) String() string {
 	}
 	msg += "剩余次数：" + strconv.Itoa(wt.Times) + "\n"
 	msg += "组织：" + wt.Organization + "\n"
+	return msg
+}
+
+func (wm MonitorWzxy) String() string {
+	msg := "id：" + wm.UserId + "\n"
+	msg += "班级：" + wm.ClassName + "\n"
+	msg += "晨检提醒状态："
+	if wm.MorningRemindEnable {
+		msg += "开启\n"
+	} else {
+		msg += "关闭\n"
+	}
+	msg += "晨检提醒时间：" + wm.MorningRemindTime + "\n"
+
+	msg += "午检提醒状态："
+	if wm.AfternoonRemindEnable {
+		msg += "开启\n"
+	} else {
+		msg += "关闭\n"
+	}
+	msg += "午检提醒时间：" + wm.AfternoonRemindTime + "\n"
+
+	msg += "晚检签到提醒状态："
+	if wm.CheckRemindEnable {
+		msg += "开启\n"
+	} else {
+		msg += "关闭\n"
+	}
+	msg += "晚检签到提醒时间：" + wm.CheckRemindTime + "\n"
+
 	return msg
 }

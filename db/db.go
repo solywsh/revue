@@ -113,7 +113,8 @@ func NewDB() *GormDb {
 		err := gb.DB.AutoMigrate(
 			RevueConfig{}, KeywordsReply{}, RevueApiToken{},
 			ProgrammerAlmanac{}, Divination{}, wzxy.UserWzxy{},
-			wzxy.TokenWzxy{}, PostForm{})
+			wzxy.TokenWzxy{}, wzxy.MonitorWzxy{},
+			wzxy.ClassStudentWzxy{}, PostForm{})
 		if err != nil {
 			log.Printf("数据库迁移失败:%s", err)
 			return

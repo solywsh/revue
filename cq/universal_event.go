@@ -49,6 +49,7 @@ func (cpf *PostForm) SendMenu() {
 	s += "\t[求签] 今日运势\n"
 	s += "\t[无内鬼来点{关键词}] 发送二刺螈图片\n"
 	s += "\t[wzxy -h] 我在校园打卡相关"
+	s += "\t[classwzxy -h] 班级我在校园打卡相关(针对班长和安全委员)\n"
 	if cpf.MessageType == "private" {
 		s += "私聊菜单:\n"
 		s += "revueApi 相关(私聊执行命令):\n"
@@ -90,41 +91,40 @@ func (cpf *PostForm) GetAnswer() {
 }
 
 // CommonEvent 对通用消息响应
-func (cpf *PostForm) CommonEvent() bool {
-
+func (cpf *PostForm) CommonEvent() (flag bool) {
+	flag = true
 	// cpf.RepeatOperation() // 对adminUSer复读防止风控
 	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
 	switch {
 	case cpf.Message == "/help":
 		cpf.SendMenu()
-		return true
+		return flag
 	case strings.HasPrefix(cpf.Message, "查找音乐"):
 		cpf.FindMusicEvent() // 查找音乐
-		return true
+		return flag
 	case cpf.Message == "程序员黄历":
 		cpf.GetProgramAlmanac() // 发送程序员黄历
-		return true
+		return flag
 	case cpf.Message == "求签":
 		cpf.GetDivination() // 求签
-		return true
-	case cpf.Message == "无内鬼来点涩图":
-		cpf.HImgEvent(0, "") // 涩图事件,非r18
-		return true
-	case cpf.Message == "无内鬼来点色图":
-		cpf.HImgEvent(1, "") // 色图事件,r18
-		return true
+		return flag
 	case strings.HasPrefix(cpf.Message, "无内鬼来点"):
-		cpf.HImgEvent(2, strings.TrimPrefix(cpf.Message, "无内鬼来点")) // 涩图事件,搜索标签tag
-		return true
+		cpf.HImgEvent(strings.TrimPrefix(cpf.Message, "无内鬼来点")) // 处理涩图事件
+		return flag
 	case strings.HasPrefix(cpf.Message, "搜索答案"):
 		cpf.GetAnswer() // 搜索答案
-		return true
+		return flag
 	case strings.HasPrefix(cpf.Message, "wzxy"):
 		cpf.HandleUserWzxy()
+		return flag
+	case strings.HasPrefix(cpf.Message, "classwzxy"):
+		cpf.HandleClassWzxy()
+		return flag
 	}
 	return false
 }
 
+// HandleUserWzxy 我在校园打卡命令逻辑
 func (cpf PostForm) HandleUserWzxy() {
 	if cpf.Message == "wzxy -h" {
 		msg := "我在校园打卡\n"
@@ -187,7 +187,7 @@ func (cpf PostForm) HandleUserWzxy() {
 				MorningCheckTime:       "08:00",
 				MorningLastCheckDate:   "2006-01-02",
 				AfternoonCheckEnable:   true,
-				AfternoonCheckTime:     "13:00",
+				AfternoonCheckTime:     "14:10",
 				AfternoonLastCheckDate: "2006-01-02",
 				EveningCheckEnable:     true,
 				EveningCheckTime:       "21:30",
@@ -371,5 +371,254 @@ func (cpf PostForm) HandleUserWzxy() {
 			cpf.SendMsg("执行失败,请按照wzxy -do morning/afternoon/check格式输入")
 		}
 		return
+	}
+}
+
+// HandleClassWzxy 处理班级打卡命令逻辑
+func (cpf PostForm) HandleClassWzxy() {
+	if cpf.Message == "classwzxy -h" {
+		msg := "我在校园班级管理\n"
+		msg += "**此功能需要班长或者安全委员权限**\n"
+		msg += "使用方法:\n"
+		msg += "\tclasswzxy -a <班级> <qq群>\t注册我在校园班级管理任务\n"
+		msg += "\tclasswzxy -d\t删除我在校园班级管理任务\n"
+		msg += "\tclasswzxy -m\t修改信息,输入classwzxy -m -h查看更多\n"
+		msg += "\tclasswzxy -r <jwsession>\t修改我在校园jwsession(与wzxy -r作用相同)\n"
+		msg += "\tclasswzxy -l\t查看我在校园班级管理任务\n"
+		msg += "\tclasswzxy -on/off morning/afternoon/check/all\t开启/关闭管理提醒任务\n"
+		msg += "\tclasswzxy -do morning/afternoon/check\t手动代签(暂未开放)\n"
+		msg += "\tclasswzxy -c\t添加学生信息,输入classwzxy -c -h查看更多"
+		msg += "\tclasswzxy -h\t查看帮助\n"
+		cpf.SendMsg(msg)
+		return
+	}
+	cmd := strings.Split(cpf.Message, " ")
+	if len(cmd) < 2 {
+		cpf.SendMsg("参数错误")
+		return
+	}
+	// 提前查找用户任务
+	// 提前查找用户任务
+	userWzxy := wzxy.UserWzxy{}
+	monitorWzxy := wzxy.MonitorWzxy{}
+	flag := false
+	if strings.HasPrefix(cpf.Message, "classwzxy -") {
+		// 查找用户任务
+		manyUser, i, err := gdb.FindWzxyUserMany(wzxy.UserWzxy{UserId: strconv.Itoa(cpf.UserId)})
+		if err != nil || i != 1 {
+			cpf.SendMsg("请先注册wzxy任务,输入wzxy -h查看帮助")
+		} else if len(manyUser) == 1 {
+			userWzxy = manyUser[0]
+		}
+		manyMonitor, i, err := gdb.FindMonitorWzxyMany(wzxy.MonitorWzxy{UserId: strconv.Itoa(cpf.UserId)})
+		if err != nil || i != 1 {
+			flag = false
+		} else if len(manyMonitor) == 1 {
+			monitorWzxy = manyMonitor[0]
+			flag = true
+		}
+	}
+
+	// 注册任务
+	if strings.HasPrefix(cpf.Message, "wzxy -a") {
+		if flag {
+			cpf.SendMsg("您已经注册过任务了")
+			return
+		}
+		if len(cmd) == 4 {
+			_, err := gdb.InsertMonitorWzxyOne(wzxy.MonitorWzxy{
+				UserId:                  strconv.Itoa(cpf.UserId),
+				UserWzxyId:              userWzxy.ID,
+				ClassName:               cmd[2],
+				ClassGroupId:            cmd[3],
+				MorningRemindEnable:     true,
+				MorningRemindTime:       "11:00",
+				MorningRemindLastDate:   "2006-01-02",
+				AfternoonRemindEnable:   false,
+				AfternoonRemindTime:     "17:00",
+				AfternoonRemindLastDate: "2006-01-02",
+				CheckRemindEnable:       false,
+				CheckRemindTime:         "23:00",
+				CheckRemindLastDate:     "2006-01-02",
+			})
+			if err != nil {
+				cpf.SendMsg("注册失败")
+				return
+			}
+			cpf.SendMsg("注册成功,输入classwzxy -l查看具体打卡任务信息")
+		} else {
+			cpf.SendMsg("注册失败,请按照classwzxy -a <班级> <qq群>格式重新输入")
+		}
+		return
+	}
+	if !flag {
+		cpf.SendMsg("您还没有注册任务")
+		return
+	}
+
+	// 打印任务
+	if cpf.Message == "classwzxy -l" {
+		cpf.SendMsg(monitorWzxy.String())
+		return
+	}
+
+	// 删除任务
+	if cpf.Message == "classwzxy -d" {
+		i, err := gdb.DeleteMonitorWzxyOne(monitorWzxy)
+		if err != nil || i != 1 {
+			cpf.SendMsg("删除失败")
+			return
+		}
+		cpf.SendMsg("删除成功")
+		return
+	}
+
+	// 修改jwsession
+	if strings.HasPrefix(cpf.Message, "classwzxy -r") {
+		if len(cmd) == 3 {
+			userWzxy.Jwsession = cmd[2]
+			userWzxy.JwsessionStatus = true
+			one, err := gdb.UpdateWzxyUserOne(userWzxy, flag)
+			if err != nil || one != 1 {
+				cpf.SendMsg("修改失败")
+				return
+			}
+			cpf.SendMsg("修改成功")
+		} else {
+			cpf.SendMsg("修改失败,请按照classwzxy -r <jwsession>格式重新输入")
+		}
+		return
+	}
+	// 修改信息
+	if strings.HasPrefix(cpf.Message, "classwzxy -m") {
+		if strings.HasPrefix(cpf.Message, "classwzxy -m -h") {
+			msg := "我在校园班级管理信息修改\n"
+			msg += "classwzxy -m -h\t查看帮助\n"
+			msg += "classwzxy -m -c <班级>\t修改班级\n"
+			msg += "classwzxy -m -g <qq群>\t修改qq群\n"
+			msg += "classwzxy -m  morning/afternoon/check 15:04\t修改[晨检/午检/签到]提醒时间,时间格式为15:04"
+			cpf.SendMsg(msg)
+			return
+		}
+		if len(cmd) == 4 && strings.HasPrefix(cpf.Message, "classwzxy -m -c") {
+			monitorWzxy.ClassName = cmd[3]
+			one, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, flag)
+			if err != nil || one != 1 {
+				cpf.SendMsg("修改失败")
+				return
+			}
+			cpf.SendMsg("修改成功")
+			return
+		}
+		if len(cmd) == 4 && strings.HasPrefix(cpf.Message, "classwzxy -m -g") {
+			monitorWzxy.ClassGroupId = cmd[3]
+			one, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, flag)
+			if err != nil || one != 1 {
+				cpf.SendMsg("修改失败")
+				return
+			}
+			cpf.SendMsg("修改成功")
+			return
+		}
+		if len(cmd) == 4 && (cmd[2] == "morning" || cmd[2] == "afternoon" || cmd[2] == "check") {
+			// todo check cmd[3] is time
+			switch cmd[2] {
+			case "morning":
+				userWzxy.MorningCheckTime = cmd[3]
+			case "afternoon":
+				userWzxy.AfternoonCheckTime = cmd[3]
+			case "check":
+				userWzxy.EveningCheckTime = cmd[3]
+			default:
+				cpf.SendMsg("修改失败,请输入classwzxy -m -h查看帮助")
+				return
+			}
+			one, err := gdb.UpdateWzxyUserOne(userWzxy, false)
+			if err != nil || one != 1 {
+				cpf.SendMsg("修改失败")
+				return
+			}
+			cpf.SendMsg("修改成功")
+		} else {
+			cpf.SendMsg("修改失败,请输入classwzxy -m -h查看帮助")
+		}
+		return
+	}
+	// 开启/关闭打卡提醒任务
+	if strings.HasPrefix(cpf.Message, "classwzxy -on") ||
+		strings.HasPrefix(cpf.Message, "classwzxy -off ") {
+		if len(cmd) == 3 {
+			var taskStatus bool
+			if cmd[1] == "-on" {
+				taskStatus = true
+			} else {
+				taskStatus = false
+			}
+			switch cmd[2] {
+			case "morning":
+				monitorWzxy.MorningRemindEnable = taskStatus
+			case "afternoon":
+				monitorWzxy.AfternoonRemindEnable = taskStatus
+			case "check":
+				monitorWzxy.CheckRemindEnable = taskStatus
+			case "all":
+				monitorWzxy.MorningRemindEnable = taskStatus
+				monitorWzxy.AfternoonRemindEnable = taskStatus
+				monitorWzxy.CheckRemindEnable = taskStatus
+			default:
+				cpf.SendMsg("修改失败,请按照classwzxy -on/off morning/afternoon/check/all格式输入")
+				return
+			}
+			one, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+			if err != nil || one != 1 {
+				cpf.SendMsg("修改失败")
+				return
+			}
+			cpf.SendMsg("修改成功")
+		} else {
+			cpf.SendMsg("修改失败,请按照classwzxy -on/off morning/afternoon/check/all格式输入")
+		}
+		return
+	}
+	// 手动执行打卡
+	if strings.HasPrefix(cpf.Message, "classwzxy -do") {
+		cpf.SendMsg("暂未开放")
+		//if len(cmd) == 3 {
+		//	var status int
+		//	var msg string
+		//	switch cmd[2] {
+		//	case "morning":
+		//		status, msg = userWzxy.CheckOperate(1)
+		//	case "afternoon":
+		//		status, msg = userWzxy.CheckOperate(2)
+		//	case "check":
+		//		status = userWzxy.EveningCheckOperate()
+		//	default:
+		//		cpf.SendMsg("执行失败,请按照wzxy -on morning/afternoon/check格式输入")
+		//		return
+		//	}
+		//	if status == 0 {
+		//		cpf.SendMsg("执行成功")
+		//	} else if msg != "" {
+		//		cpf.SendMsg("执行失败," + msg)
+		//	} else {
+		//		cpf.SendMsg("执行失败")
+		//	}
+		//} else {
+		//	cpf.SendMsg("执行失败,请按照wzxy -do morning/afternoon/check格式输入")
+		//}
+		return
+	}
+
+	if strings.HasPrefix(cpf.Message, "classwzxy -c") {
+		if strings.HasPrefix(cpf.Message, "classwzxy -c -h") {
+			msg := "添加班级学生信息\n"
+			msg += "classwzxy -c -a <姓名> <学号> <班级> <qq>\t添加单个学生信息\n"
+			msg += "classwzxy -c -a -m [{\"name\":\"姓名\",\"id\":\"学号\",\"class\":\"班级\",\"qq\":\"qq\"}...]\t添加多个学生信息\n"
+			msg += "classwzxy -c -d <学号>\t删除单个学生信息\n"
+			msg += "classwzxy -c -u <学号> <姓名> <班级> <qq>\t修改单个学生信息(学号强绑定)\n"
+			cpf.SendMsg(msg)
+			return
+		}
 	}
 }

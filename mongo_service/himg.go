@@ -48,9 +48,3 @@ func (m *Mongo) GetLoLiCon(r18 bool) (*LoliconData, error) {
 	}
 	return &result[0], nil
 }
-
-//func main() {
-//	if mon, ok := NewMongo(); ok {
-//		fmt.Println(mon.GetLoLiCon(true))
-//	}
-//}
