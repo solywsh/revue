@@ -5,12 +5,13 @@ import (
 	"github.com/solywsh/qqBot-revue/service/wzxy"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
 const (
-	MorningCheckEndTime   = "10:00"
-	AfternoonCheckEndTime = "15:00"
+	MorningCheckEndTime   = "12:00"
+	AfternoonCheckEndTime = "18:00"
 	EveningCheckEndTime   = "23:59"
 )
 
@@ -19,12 +20,21 @@ func wzxyService() {
 		now := time.Now()
 		timeNow := now.Format("15:04")
 		dateNow := now.Format("2006-01-02")
-		many, _, err := gdb.FindWzxyUserMany(wzxy.UserWzxy{})
+		wzxyUserMany, _, err := gdb.FindWzxyUserMany(wzxy.UserWzxy{})
 		if err != nil {
 			log.Println("wzxyService FindWzxyUserMany err:", err)
+			time.Sleep(time.Second * 10)
 			continue
 		}
-		for _, userWzxy := range many {
+		monitorWzxyMany, _, err := gdb.FindMonitorWzxyMany(wzxy.MonitorWzxy{})
+		if err != nil {
+			log.Println("wzxyService FindMonitorWzxyMany err:", err)
+			time.Sleep(time.Second * 10)
+			return
+		}
+
+		// 轮询打卡业务
+		for _, userWzxy := range wzxyUserMany {
 			if timeNow < MorningCheckEndTime &&
 				userWzxy.MorningCheckEnable &&
 				userWzxy.MorningCheckTime < timeNow &&
@@ -42,6 +52,11 @@ func wzxyService() {
 				} else if msg == "未登录,请重新登录" {
 					cpf.SendMsg("晨检打卡失败,可能是jwtsession失效，请尝试wzxy -r 更新jwtsession")
 					userWzxy.JwsessionStatus = false
+					_, err := gdb.UpdateWzxyUserOne(userWzxy, true)
+					if err != nil {
+						log.Println("wzxyService UpdateWzxyUserOne err:", err)
+						continue
+					}
 				} else {
 					cpf.SendMsg("晨检打卡失败," + msg)
 				}
@@ -52,7 +67,6 @@ func wzxyService() {
 					continue
 				}
 			}
-
 			if timeNow < AfternoonCheckEndTime &&
 				userWzxy.AfternoonCheckEnable &&
 				userWzxy.AfternoonCheckTime < timeNow &&
@@ -70,6 +84,11 @@ func wzxyService() {
 				} else if msg == "未登录,请重新登录" {
 					cpf.SendMsg("午检打卡失败,可能是jwtsession失效，请尝试wzxy -r 更新jwtsession")
 					userWzxy.JwsessionStatus = false
+					_, err := gdb.UpdateWzxyUserOne(userWzxy, true)
+					if err != nil {
+						log.Println("wzxyService UpdateWzxyUserOne err:", err)
+						continue
+					}
 				} else {
 					cpf.SendMsg("午检打卡失败," + msg)
 				}
@@ -80,7 +99,6 @@ func wzxyService() {
 					continue
 				}
 			}
-
 			if timeNow < EveningCheckEndTime &&
 				userWzxy.EveningCheckEnable &&
 				userWzxy.EveningCheckTime < timeNow &&
@@ -113,6 +131,113 @@ func wzxyService() {
 				}
 			}
 		}
+		// 轮询打卡提醒业务
+		for _, monitorWzxy := range monitorWzxyMany {
+			var userWzxy wzxy.UserWzxy
+			for _, wum := range wzxyUserMany {
+				if wum.ID == monitorWzxy.UserWzxyId {
+					userWzxy = wum
+				}
+			}
+			if timeNow < MorningCheckEndTime &&
+				monitorWzxy.MorningRemindEnable &&
+				monitorWzxy.MorningRemindTime < timeNow &&
+				monitorWzxy.MorningRemindLastDate < dateNow &&
+				userWzxy.JwsessionStatus {
+				handleRemindCheckDaily(1, dateNow, monitorWzxy, userWzxy)
+			}
+
+			if timeNow < AfternoonCheckEndTime &&
+				monitorWzxy.AfternoonRemindEnable &&
+				monitorWzxy.AfternoonRemindTime < timeNow &&
+				monitorWzxy.AfternoonRemindLastDate < dateNow &&
+				userWzxy.JwsessionStatus {
+				handleRemindCheckDaily(2, dateNow, monitorWzxy, userWzxy)
+			}
+		}
 		time.Sleep(5 * time.Minute)
+	}
+}
+
+func handleRemindCheckDaily(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzxy.UserWzxy) {
+	var keywords string
+	if seq == 1 {
+		keywords = "晨检"
+	} else {
+		keywords = "午检"
+	}
+	userId, _ := strconv.Atoi(userWzxy.UserId)
+	groupId, _ := strconv.Atoi(monitorWzxy.ClassGroupId)
+	cpf := cq.PostForm{
+		UserId:      userId,
+		GroupId:     groupId,
+		MessageType: "private", // private group
+	}
+	log.Println("class name:", monitorWzxy.ClassName,
+		"user name:", userWzxy.Name,
+		"seq:", seq,
+		keywords+"wzxyService 打卡提醒")
+	uncheckList, err := userWzxy.GetUncheckList(seq)
+	if err != nil {
+		if strings.Contains(err.Error(), "未登录") {
+			log.Println("class name:", monitorWzxy.ClassName,
+				"user name:", userWzxy.Name,
+				"seq:", seq,
+				"wzxyService GetUncheckList err:", err)
+			cpf.SendMsg("获取晨检未打卡列表失败,可能是jwtsession失效，请尝试wzxy -r 更新jwtsession")
+			userWzxy.JwsessionStatus = false
+			_, err = gdb.UpdateWzxyUserOne(userWzxy, true)
+			if err != nil {
+				log.Println("class name:", monitorWzxy.ClassName,
+					"user name:", userWzxy.Name,
+					"seq:", seq,
+					"uncheck name:",
+					"wzxyService UpdateWzxyUserOne err:", err)
+				return
+			}
+		}
+		log.Println("class name:", monitorWzxy.ClassName,
+			"user name:", userWzxy.Name,
+			"seq:", seq,
+			"wzxyService FindClassStudentWzxyMany:", err)
+		cpf.SendMsg("获取晨检未打卡列表失败")
+		return
+	}
+	if len(uncheckList) == 0 {
+		cpf.SendGroupMsg("今天所有人都已经打卡了")
+		return
+	}
+	var msg string
+	msg += keywords + "未打卡列表:\n"
+	for _, uncheck := range uncheckList {
+		many, i, err := gdb.FindClassStudentWzxyMany(wzxy.ClassStudentWzxy{StudentId: uncheck.StudentId})
+		if err != nil {
+			log.Println("class name:", monitorWzxy.ClassName,
+				"user name:", userWzxy.Name,
+				"seq:", seq,
+				"uncheck name:", uncheck.Name,
+				"wzxyService FindClassStudentWzxyMany:", err)
+			continue
+		} else if i == 1 {
+			msg += cq.GetCqCodeAt(many[0].UserId, "") + " "
+		} else if i == 0 {
+			msg += uncheck.Name + "(未添加至数据库) "
+		}
+	}
+	msg += "\n请尽快打卡"
+	cpf.SendGroupMsg(msg)
+	if seq == 1 {
+		monitorWzxy.MorningRemindLastDate = dateNow
+	} else {
+		monitorWzxy.AfternoonRemindLastDate = dateNow
+	}
+	_, err = gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+	if err != nil {
+		log.Println("class name:", monitorWzxy.ClassName,
+			"user name:", userWzxy.Name,
+			"seq:", seq,
+			"uncheck name:",
+			"wzxyService UpdateWzxyMonitorOne err:", err)
+		return
 	}
 }

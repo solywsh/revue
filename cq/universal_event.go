@@ -6,6 +6,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/solywsh/qqBot-revue/service/wzxy"
 	"github.com/thedevsaddam/gojsonq"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -525,16 +526,16 @@ func (cpf PostForm) HandleClassWzxy() {
 			// todo check cmd[3] is time
 			switch cmd[2] {
 			case "morning":
-				userWzxy.MorningCheckTime = cmd[3]
+				monitorWzxy.MorningRemindTime = cmd[3]
 			case "afternoon":
-				userWzxy.AfternoonCheckTime = cmd[3]
+				monitorWzxy.AfternoonRemindTime = cmd[3]
 			case "check":
-				userWzxy.EveningCheckTime = cmd[3]
+				monitorWzxy.CheckRemindTime = cmd[3]
 			default:
 				cpf.SendMsg("修改失败,请输入classwzxy -m -h查看帮助")
 				return
 			}
-			one, err := gdb.UpdateWzxyUserOne(userWzxy, false)
+			one, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, false)
 			if err != nil || one != 1 {
 				cpf.SendMsg("修改失败")
 				return
@@ -646,9 +647,11 @@ func (cpf PostForm) HandleClassWzxy() {
 			return
 		}
 		if strings.HasPrefix(cpf.Message, "classwzxy -c -a -m") && len(cmd) == 5 {
+			fmt.Println("[" + cmd[4] + "]")
 			var csws []wzxy.ClassStudentWzxy
 			err := json.Unmarshal([]byte("["+cmd[4]+"]"), &csws)
 			if err != nil {
+				log.Println("json解析失败", err)
 				cpf.SendMsg("添加失败,请按照classwzxy -c -a -m {\"name\":\"姓名\",\"id\":\"学号\",\"class\":\"班级\",\"qq\":\"qq\"},{...}...格式输入")
 				return
 			}
@@ -725,5 +728,4 @@ func (cpf PostForm) HandleClassWzxy() {
 			return
 		}
 	}
-
 }
