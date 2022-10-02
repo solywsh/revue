@@ -1,6 +1,9 @@
 package db
 
-import "github.com/solywsh/qqBot-revue/service/wzxy"
+import (
+	"database/sql"
+	"github.com/solywsh/qqBot-revue/service/wzxy"
+)
 
 func (gb *GormDb) InsertWzxyTokenOne(t wzxy.TokenWzxy) (int64, error) {
 	res := gb.DB.Create(&t)
@@ -121,4 +124,19 @@ func (gb *GormDb) UpdateClassStudentWzxyOne(csw wzxy.ClassStudentWzxy, saveZero 
 		res := gb.DB.Model(&csw).Updates(csw)
 		return res.RowsAffected, res.Error
 	}
+}
+
+func (gb *GormDb) FindClassStudentWzxyByKeywords(keywords string) ([]wzxy.ClassStudentWzxy, int64, error) {
+	var csws []wzxy.ClassStudentWzxy
+	results := gb.DB.Raw("SELECT * FROM class_student_wzxies WHERE "+
+		"name = @name OR "+
+		"student_id = @student_id OR "+
+		"class_name = @class_name OR "+
+		"user_id = @user_id",
+		sql.Named("name", keywords),
+		sql.Named("student_id", keywords),
+		sql.Named("class_name", keywords),
+		sql.Named("user_id", keywords)).
+		Find(&csws)
+	return csws, results.RowsAffected, results.Error
 }

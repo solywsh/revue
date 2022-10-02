@@ -1,6 +1,7 @@
 package cq
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/solywsh/qqBot-revue/service/wzxy"
@@ -48,7 +49,7 @@ func (cpf *PostForm) SendMenu() {
 	s += "\t[程序员黄历] 显示今天黄历\n"
 	s += "\t[求签] 今日运势\n"
 	s += "\t[无内鬼来点{关键词}] 发送二刺螈图片\n"
-	s += "\t[wzxy -h] 我在校园打卡相关"
+	s += "\t[wzxy -h] 我在校园打卡相关\n"
 	s += "\t[classwzxy -h] 班级我在校园打卡相关(针对班长和安全委员)\n"
 	if cpf.MessageType == "private" {
 		s += "私聊菜单:\n"
@@ -387,7 +388,7 @@ func (cpf PostForm) HandleClassWzxy() {
 		msg += "\tclasswzxy -l\t查看我在校园班级管理任务\n"
 		msg += "\tclasswzxy -on/off morning/afternoon/check/all\t开启/关闭管理提醒任务\n"
 		msg += "\tclasswzxy -do morning/afternoon/check\t手动代签(暂未开放)\n"
-		msg += "\tclasswzxy -c\t添加学生信息,输入classwzxy -c -h查看更多"
+		msg += "\tclasswzxy -c\t添加学生信息,输入classwzxy -c -h查看更多\n"
 		msg += "\tclasswzxy -h\t查看帮助\n"
 		cpf.SendMsg(msg)
 		return
@@ -406,7 +407,7 @@ func (cpf PostForm) HandleClassWzxy() {
 		// 查找用户任务
 		manyUser, i, err := gdb.FindWzxyUserMany(wzxy.UserWzxy{UserId: strconv.Itoa(cpf.UserId)})
 		if err != nil || i != 1 {
-			cpf.SendMsg("请先注册wzxy任务,输入wzxy -h查看帮助")
+			cpf.SendMsg("请先注册classwzxy任务,输入classwzxy -h查看帮助")
 		} else if len(manyUser) == 1 {
 			userWzxy = manyUser[0]
 		}
@@ -420,7 +421,7 @@ func (cpf PostForm) HandleClassWzxy() {
 	}
 
 	// 注册任务
-	if strings.HasPrefix(cpf.Message, "wzxy -a") {
+	if strings.HasPrefix(cpf.Message, "classwzxy -a") {
 		if flag {
 			cpf.SendMsg("您已经注册过任务了")
 			return
@@ -434,7 +435,7 @@ func (cpf PostForm) HandleClassWzxy() {
 				MorningRemindEnable:     true,
 				MorningRemindTime:       "11:00",
 				MorningRemindLastDate:   "2006-01-02",
-				AfternoonRemindEnable:   false,
+				AfternoonRemindEnable:   true,
 				AfternoonRemindTime:     "17:00",
 				AfternoonRemindLastDate: "2006-01-02",
 				CheckRemindEnable:       false,
@@ -582,7 +583,7 @@ func (cpf PostForm) HandleClassWzxy() {
 	}
 	// 手动执行打卡
 	if strings.HasPrefix(cpf.Message, "classwzxy -do") {
-		cpf.SendMsg("暂未开放")
+		cpf.SendMsg("代打功能暂未开放")
 		//if len(cmd) == 3 {
 		//	var status int
 		//	var msg string
@@ -614,11 +615,115 @@ func (cpf PostForm) HandleClassWzxy() {
 		if strings.HasPrefix(cpf.Message, "classwzxy -c -h") {
 			msg := "添加班级学生信息\n"
 			msg += "classwzxy -c -a <姓名> <学号> <班级> <qq>\t添加单个学生信息\n"
-			msg += "classwzxy -c -a -m [{\"name\":\"姓名\",\"id\":\"学号\",\"class\":\"班级\",\"qq\":\"qq\"}...]\t添加多个学生信息\n"
+			msg += "classwzxy -c -a -m {\"name\":\"姓名\",\"id\":\"学号\",\"class\":\"班级\",\"qq\":\"qq\"},{...}...\t添加多个学生信息(请勿留空格)\n"
 			msg += "classwzxy -c -d <学号>\t删除单个学生信息\n"
 			msg += "classwzxy -c -u <学号> <姓名> <班级> <qq>\t修改单个学生信息(学号强绑定)\n"
+			msg += "classwzxy -c -f <keyword>\t查找学生信息\n"
+			cpf.SendMsg(msg)
+			return
+		}
+		if strings.HasPrefix(cpf.Message, "classwzxy -c -a") && len(cmd) == 7 {
+			_, i, err := gdb.FindClassStudentWzxyMany(wzxy.ClassStudentWzxy{StudentId: cmd[4]})
+			if err != nil {
+				cpf.SendMsg("添加失败")
+				return
+			} else if i > 0 {
+				cpf.SendMsg("添加失败,该学生已存在")
+				return
+			}
+			csw := wzxy.ClassStudentWzxy{
+				Name:      cmd[3],
+				StudentId: cmd[4],
+				ClassName: cmd[5],
+				UserId:    cmd[6],
+			}
+			_, err = gdb.InsertClassStudentWzxyOne(csw)
+			if err != nil {
+				cpf.SendMsg("添加失败")
+				return
+			}
+			cpf.SendMsg("添加成功")
+			return
+		}
+		if strings.HasPrefix(cpf.Message, "classwzxy -c -a -m") && len(cmd) == 5 {
+			var csws []wzxy.ClassStudentWzxy
+			err := json.Unmarshal([]byte("["+cmd[4]+"]"), &csws)
+			if err != nil {
+				cpf.SendMsg("添加失败,请按照classwzxy -c -a -m {\"name\":\"姓名\",\"id\":\"学号\",\"class\":\"班级\",\"qq\":\"qq\"},{...}...格式输入")
+				return
+			}
+			for _, csw := range csws {
+				_, i, err := gdb.FindClassStudentWzxyMany(wzxy.ClassStudentWzxy{StudentId: csw.StudentId})
+				if err != nil {
+					cpf.SendMsg(csw.Name + "添加失败,查找错误")
+					continue
+				} else if i > 0 {
+					cpf.SendMsg(csw.Name + "添加失败,该学生已存在")
+					continue
+				}
+				_, err = gdb.InsertClassStudentWzxyOne(csw)
+				if err != nil {
+					cpf.SendMsg(csw.Name + "添加失败")
+					continue
+				}
+			}
+			cpf.SendMsg("添加完成")
+			return
+		}
+		if strings.HasPrefix(cpf.Message, "classwzxy -c -d") && len(cmd) == 4 {
+			manyClassStudent, i, err := gdb.FindClassStudentWzxyMany(wzxy.ClassStudentWzxy{StudentId: cmd[3]})
+			if err != nil {
+				cpf.SendMsg("删除失败,查找失败")
+				return
+			} else if i == 0 {
+				cpf.SendMsg("删除失败,该学生不存在")
+				return
+			}
+			_, err = gdb.DeleteClassStudentWzxyOne(manyClassStudent[0])
+			if err != nil {
+				cpf.SendMsg("删除失败")
+				return
+			}
+			cpf.SendMsg("删除成功")
+			return
+		}
+		if strings.HasPrefix(cpf.Message, "classwzxy -c -u") && len(cmd) == 7 {
+			manyClassStudent, i, err := gdb.FindClassStudentWzxyMany(wzxy.ClassStudentWzxy{StudentId: cmd[3]})
+			if err != nil {
+				cpf.SendMsg("修改失败")
+				return
+			} else if i == 0 {
+				cpf.SendMsg("修改失败,该学生不存在")
+				return
+			}
+			manyClassStudent[0].Name = cmd[4]
+			manyClassStudent[0].ClassName = cmd[5]
+			manyClassStudent[0].UserId = cmd[6]
+			_, err = gdb.UpdateClassStudentWzxyOne(manyClassStudent[0], true)
+			if err != nil {
+				cpf.SendMsg("修改失败")
+				return
+			}
+			cpf.SendMsg("修改成功")
+			return
+		}
+		if strings.HasPrefix(cpf.Message, "classwzxy -c -f") && len(cmd) == 4 {
+			csws, i, err := gdb.FindClassStudentWzxyByKeywords(cmd[3])
+			if err != nil {
+				cpf.SendMsg("查找失败")
+				return
+			} else if i == 0 {
+				cpf.SendMsg("没有找到相关结果")
+				return
+			}
+			msg := "查找到" + strconv.Itoa(int(i)) + "个结果\n"
+			for _, csw := range csws {
+				msg += "====================\n"
+				msg += csw.String()
+			}
 			cpf.SendMsg(msg)
 			return
 		}
 	}
+
 }

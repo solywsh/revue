@@ -61,10 +61,10 @@ type MonitorWzxy struct {
 
 type ClassStudentWzxy struct {
 	ID        uint   `gorm:"primaryKey;autoIncrement"`
-	Name      string // 姓名
-	StudentId string // 学号
-	ClassName string // 班级名称
-	UserId    string // 用户ID/QQ
+	Name      string `json:"name"`  // 姓名
+	StudentId string `json:"id"`    // 学号
+	ClassName string `json:"class"` // 班级名称
+	UserId    string `json:"qq"`    // 用户ID/QQ
 	checkId   string // 签到Id,用于打卡(暂不开发)
 }
 
@@ -318,7 +318,7 @@ func (wm MonitorWzxy) String() string {
 	}
 	msg += "午检提醒时间：" + wm.AfternoonRemindTime + "\n"
 
-	msg += "晚检签到提醒状态："
+	msg += "晚检签到提醒状态(该功能暂未开放)："
 	if wm.CheckRemindEnable {
 		msg += "开启\n"
 	} else {
@@ -326,5 +326,13 @@ func (wm MonitorWzxy) String() string {
 	}
 	msg += "晚检签到提醒时间：" + wm.CheckRemindTime + "\n"
 
+	return msg
+}
+
+func (w ClassStudentWzxy) String() string {
+	msg := "qq：" + w.UserId + "\n"
+	msg += "学号：" + w.StudentId + "\n"
+	msg += "姓名：" + w.Name + "\n"
+	msg += "班级：" + w.ClassName + "\n"
 	return msg
 }
