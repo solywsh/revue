@@ -69,6 +69,14 @@ type Divination struct {
 	UserId string //用户id,QQ号
 }
 
+// ListenGroup 监听的群
+type ListenGroup struct {
+	ID     uint   `gorm:"primaryKey;autoIncrement"`
+	Date   string //日期
+	UserId string //设置用户id,QQ号
+	Group  string //群号
+}
+
 // GormDb 这里对GormDb重新封装了一下
 type GormDb struct {
 	DB *gorm.DB

@@ -2,6 +2,7 @@ package mongo_service
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -45,6 +46,9 @@ func (m *Mongo) GetLoLiCon(r18 bool) (*LoliconData, error) {
 	if err != nil {
 		log.Println("Decode error", err)
 		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, errors.New("没有相关数据")
 	}
 	return &result[0], nil
 }

@@ -149,10 +149,8 @@ func count() {
 }
 
 func main() {
-
 	client.SetRetryCount(3)
 	client.SetRetryWaitTime(time.Second * 10)
-
 	// 关闭数据库
 	defer func(DbClient *mongo.Client, ctx context.Context) {
 		err := DbClient.Disconnect(ctx)

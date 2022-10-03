@@ -146,13 +146,18 @@ func wzxyService() {
 				userWzxy.JwsessionStatus {
 				handleRemindCheckDaily(1, dateNow, monitorWzxy, userWzxy)
 			}
-
 			if timeNow < AfternoonCheckEndTime &&
 				monitorWzxy.AfternoonRemindEnable &&
 				monitorWzxy.AfternoonRemindTime < timeNow &&
 				monitorWzxy.AfternoonRemindLastDate < dateNow &&
 				userWzxy.JwsessionStatus {
 				handleRemindCheckDaily(2, dateNow, monitorWzxy, userWzxy)
+			}
+			if monitorWzxy.CheckRemindEnable &&
+				monitorWzxy.CheckRemindTime < timeNow &&
+				monitorWzxy.CheckRemindLastDate < dateNow &&
+				userWzxy.JwsessionStatus {
+				handleRemindSign(dateNow, monitorWzxy, userWzxy)
 			}
 		}
 		time.Sleep(5 * time.Minute)
@@ -177,13 +182,13 @@ func handleRemindCheckDaily(seq int, dateNow string, monitorWzxy wzxy.MonitorWzx
 		"user name:", userWzxy.Name,
 		"seq:", seq,
 		keywords+"wzxyService 打卡提醒")
-	uncheckList, err := userWzxy.GetUncheckList(seq)
+	uncheckList, err := userWzxy.GetDailyUncheckList(seq)
 	if err != nil {
 		if strings.Contains(err.Error(), "未登录") {
 			log.Println("class name:", monitorWzxy.ClassName,
 				"user name:", userWzxy.Name,
 				"seq:", seq,
-				"wzxyService GetUncheckList err:", err)
+				"wzxyService GetDailyUncheckList err:", err)
 			cpf.SendMsg("获取晨检未打卡列表失败,可能是jwtsession失效，请尝试wzxy -r 更新jwtsession")
 			userWzxy.JwsessionStatus = false
 			_, err = gdb.UpdateWzxyUserOne(userWzxy, true)
@@ -191,7 +196,6 @@ func handleRemindCheckDaily(seq int, dateNow string, monitorWzxy wzxy.MonitorWzx
 				log.Println("class name:", monitorWzxy.ClassName,
 					"user name:", userWzxy.Name,
 					"seq:", seq,
-					"uncheck name:",
 					"wzxyService UpdateWzxyUserOne err:", err)
 				return
 			}
@@ -236,6 +240,71 @@ func handleRemindCheckDaily(seq int, dateNow string, monitorWzxy wzxy.MonitorWzx
 		log.Println("class name:", monitorWzxy.ClassName,
 			"user name:", userWzxy.Name,
 			"seq:", seq,
+			"uncheck name:",
+			"wzxyService UpdateWzxyMonitorOne err:", err)
+		return
+	}
+}
+
+func handleRemindSign(dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzxy.UserWzxy) {
+	userId, _ := strconv.Atoi(userWzxy.UserId)
+	groupId, _ := strconv.Atoi(monitorWzxy.ClassGroupId)
+	cpf := cq.PostForm{
+		UserId:      userId,
+		GroupId:     groupId,
+		MessageType: "private", // private group
+	}
+	log.Println("class name:", monitorWzxy.ClassName,
+		"user name:", userWzxy.Name,
+		"wzxyService 签到提醒")
+	uncheckList, status := userWzxy.GetUnSignedList()
+	if status == -1 {
+		cpf.SendMsg("获取未签到列表信息失败,网络错误")
+		return
+	} else if status == -3 {
+		cpf.SendMsg("获取未签到列表失败,不在签到时间范围内")
+		return
+	} else if status == -4 {
+		cpf.SendMsg("获取未签到列表失败,可能是jwtsession失效，请尝试wzxy -r 更新jwtsession")
+		userWzxy.JwsessionStatus = false
+		_, err := gdb.UpdateWzxyUserOne(userWzxy, true)
+		if err != nil {
+			log.Println("class name:", monitorWzxy.ClassName,
+				"user name:", userWzxy.Name,
+				"wzxyService UpdateWzxyUserOne err:", err)
+			return
+		}
+	} else if status == -5 {
+		cpf.SendMsg("获取签到列表失败,未知的错误")
+		return
+	}
+	if len(uncheckList) == 0 {
+		cpf.SendGroupMsg("今天所有人都已经打卡了")
+		return
+	}
+	var msg string
+	msg += "签到未打卡列表:\n"
+	for _, uncheck := range uncheckList {
+		many, i, err := gdb.FindClassStudentWzxyMany(wzxy.ClassStudentWzxy{StudentId: uncheck.StudentId})
+		if err != nil {
+			log.Println("class name:", monitorWzxy.ClassName,
+				"user name:", userWzxy.Name,
+				"uncheck name:", uncheck.Name,
+				"wzxyService FindClassStudentWzxyMany:", err)
+			continue
+		} else if i == 1 {
+			msg += cq.GetCqCodeAt(many[0].UserId, "") + " "
+		} else if i == 0 {
+			msg += uncheck.Name + "(未添加至数据库) "
+		}
+	}
+	msg += "\n请尽快打卡"
+	cpf.SendGroupMsg(msg)
+	monitorWzxy.CheckRemindLastDate = dateNow
+	_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+	if err != nil {
+		log.Println("class name:", monitorWzxy.ClassName,
+			"user name:", userWzxy.Name,
 			"uncheck name:",
 			"wzxyService UpdateWzxyMonitorOne err:", err)
 		return

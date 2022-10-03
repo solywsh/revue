@@ -14,7 +14,8 @@
     - `无内鬼来点涩图`：非R18图片
     - `无内鬼来点色图`：R18图片
     - `无内鬼来点{keyword1|keyword2|...}`：根据关键词搜索，exp：`无内鬼来点白毛`
-
+  - 我在校园自动签到：`wzxy -h`查看更多
+  
 - 私聊
   - 消息发送apiToken：`getToken/resetToken/deleteToken`
 - 群聊

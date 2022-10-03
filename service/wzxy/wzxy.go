@@ -82,7 +82,7 @@ func getDate() string {
 	return time.Now().Format("20060102")
 }
 
-func (u UserWzxy) GetUncheckList(seq int) ([]ClassStudentWzxy, error) {
+func (u UserWzxy) GetDailyUncheckList(seq int) ([]ClassStudentWzxy, error) {
 	client := resty.New()
 	var uncheckList []ClassStudentWzxy
 	page := 1
@@ -183,10 +183,11 @@ func (u UserWzxy) getSignMessage() (res int, signId, logId string) {
 			logId = pJson.Reset().Find("data.[0].logId").(string)
 			//fmt.Println(signId, logId)
 			// 不在签到区间
-			return -2, "", ""
+			return -3, "", ""
 		}
 	}
-	return -1, "", ""
+	// code != 0 可能jwsession过期
+	return -4, "", ""
 }
 
 func (u UserWzxy) doEveningCheck(signId, logId string) int {
@@ -233,9 +234,12 @@ func (u UserWzxy) EveningCheckOperate() int {
 	case -1:
 		log.Println(u.Name, "获取晚检信息失败,网络错误")
 		return -1
-	case -2:
+	case -3:
 		log.Println(u.Name, "晚检签到失败,不在签到时间范围内")
 		return -3 // 不在签到时间范围内
+	case -4:
+		log.Println(u.Name, "获取晚检信息失败,可能是jwsession失效")
+		return -2
 	default:
 		log.Println(u.Name, "获取晚检信息失败,未知错误")
 		return -4 // 未知错误
@@ -335,4 +339,55 @@ func (w ClassStudentWzxy) String() string {
 	msg += "姓名：" + w.Name + "\n"
 	msg += "班级：" + w.ClassName + "\n"
 	return msg
+}
+
+func (u UserWzxy) GetUnSignedList() ([]ClassStudentWzxy, int) {
+	res, signId, _ := u.getSignMessage()
+	switch res {
+	case 0:
+		return u.doGetUnsignedList(signId)
+	case -1:
+		log.Println(u.Name, "获取晚检信息失败,网络错误")
+		return nil, -1
+	case -3:
+		log.Println(u.Name, "获取签到列表失败,不在签到时间范围内")
+		return nil, -3 // 不在签到时间范围内
+	case -4:
+		log.Println(u.Name, "获取晚检信息失败,可能是jwsession失效")
+		return nil, -4 // jwsession失效
+	default:
+		log.Println(u.Name, "获取晚检信息失败,未知错误")
+		return nil, -5 // 未知错误
+	}
+}
+
+func (u UserWzxy) doGetUnsignedList(signId string) ([]ClassStudentWzxy, int) {
+	client := resty.New()
+	payload := strings.NewReader(`id=` + signId)
+	post, err := client.R().SetHeaders(map[string]string{
+		"JWSESSION":      u.Jwsession,
+		"User-Agent":     u.UserAgent,
+		"Content-Type":   "application/x-www-form-urlencoded",
+		"Host":           "student.wozaixiaoyuan.com",
+		"Content-Length": strconv.Itoa(payload.Len()),
+	}).SetBody(payload).Post("https://student.wozaixiaoyuan.com/gradeManage/sign/getSignResult.json")
+	if err != nil {
+		log.Println(u.Name, "获取晚检信息失败,网络错误")
+		return nil, -1
+	}
+	postJson := gojsonq.New().JSONString(post.String())
+	if int(postJson.Reset().Find("code").(float64)) != 0 {
+		return nil, -4
+	}
+	uncheckData := postJson.Reset().From("data.notSign").Select("name", "number", "grade").Get()
+	var uncheckList []ClassStudentWzxy
+	for _, data := range uncheckData.([]interface{}) {
+		csw := ClassStudentWzxy{
+			Name:      data.(map[string]interface{})["name"].(string),
+			ClassName: data.(map[string]interface{})["grade"].(string),
+			StudentId: data.(map[string]interface{})["number"].(string),
+		}
+		uncheckList = append(uncheckList, csw)
+	}
+	return uncheckList, 0
 }

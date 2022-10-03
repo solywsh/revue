@@ -54,25 +54,54 @@ func (cpf *PostForm) AdminEvent() {
 	// case "$bash" 对系统执行命令
 	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"bash"):
 		cpf.BashCommand()
-	// 创建我在校园token 格式为$wzxyct:alive_days:user:status:times:organization
-	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxyct"):
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy"):
+		cpf.HandleAdminWzxy()
+	//// 创建我在校园token 格式为$wzxyct:alive_days:user:status:times:organization
+	//case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxyct"):
+	//	cpf.CreateWzxyToken()
+	//// 删除我在校园token 格式为$wzxydt:token:user:organization
+	//case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxydt"):
+	//	cpf.DeleteWzxyToken()
+	//// 查找token信息 格式为$wzxyft:token:user:organization
+	//case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxyft"):
+	//	cpf.FindWzxyToken()
+	// Listen group
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"lg"):
+		//todo listen group
+	}
+}
+
+func (cpf *PostForm) HandleAdminWzxy() {
+	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -h" {
+		msg := "我在校园Token管理\n"
+		msg += "使用方法:\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -c\t注册我在校园Token,输入" + yamlConf.AdminUserOrderHeader + "wzxy -c -h显示更多信息\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -d\t删除我在校园Token,输入" + yamlConf.AdminUserOrderHeader + "wzxy -d -h显示更多信息\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -f\t查找我在校园Token,输入" + yamlConf.AdminUserOrderHeader + "wzxy -f -h显示更多信息\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -h\t查看帮助\n"
+		cpf.SendMsg(msg)
+		return
+	}
+	switch {
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy -c"):
 		cpf.CreateWzxyToken()
-	// 删除我在校园token 格式为$wzxydt:token:user:organization
-	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxydt"):
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy -d"):
 		cpf.DeleteWzxyToken()
-	// 查找token信息 格式为$wzxyft:token:user:organization
-	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxyft"):
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy -f"):
 		cpf.FindWzxyToken()
 	}
+
+}
+
+func (cpf *PostForm) HandleAdminListenGroup() {
+
 }
 
 func (cpf *PostForm) AdminHelp() {
 	msg := "欢迎使用admin命令\n"
 	msg += "[" + yamlConf.AdminUserOrderHeader + "help]显示菜单\n"
-	msg += "[" + yamlConf.AdminUserOrderHeader + "bash {command}]执行bash命令\n"
-	msg += "[" + yamlConf.AdminUserOrderHeader + "wzxyct]创建我在校园token,输入" + yamlConf.AdminUserOrderHeader + "wzxyct -h显示更多信息\n"
-	msg += "[" + yamlConf.AdminUserOrderHeader + "wzxydt]删除我在校园token,输入" + yamlConf.AdminUserOrderHeader + "wzxydt -h显示更多信息\n"
-	msg += "[" + yamlConf.AdminUserOrderHeader + "wzxyft]查找我在校园token,输入" + yamlConf.AdminUserOrderHeader + "wzxyft -h显示更多信息\n"
+	msg += "[" + yamlConf.AdminUserOrderHeader + "bash {command}]执行Linux bash命令\n"
+	msg += "[" + yamlConf.AdminUserOrderHeader + "wzxy]我在校园token相关,输入" + yamlConf.AdminUserOrderHeader + "wzxy -h显示更多信息\n"
 	cpf.SendMsg(msg)
 }
 
@@ -92,14 +121,14 @@ func (cpf *PostForm) BashCommand() {
 	cpf.SendMsg(res)
 }
 
-// 创建我在校园token 格式为$wzxyct:alive_days:user:status:times:organization
-
+// CreateWzxyToken 创建我在校园token 格式为$wzxy -c <alive_days> <user> <status> <times> <organization>
 func (cpf *PostForm) CreateWzxyToken() {
-	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxyct -h" {
+	cmd := strings.Split(cpf.Message, " ")
+	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -c -h" {
 		msg := "创建我在校园token\n"
 		msg += "格式:\n" +
-			"\t完整命令:" + yamlConf.AdminUserOrderHeader + "wzxyct:alive_days:user:status:times:organization\n" +
-			"\t快速创建:" + yamlConf.AdminUserOrderHeader + "wzxyct:alive_days\n"
+			"\t完整命令:" + yamlConf.AdminUserOrderHeader + "wzxy -c <alive_days> <user> <status> <times> <organization>\n" +
+			"\t快速创建:" + yamlConf.AdminUserOrderHeader + "wzxy -c <alive_days>\n"
 		msg += "参数:\n" +
 			"\talive_days:有效天数,默认1天\n" +
 			"\tuser:用户名,默认管理员qq号\n" +
@@ -111,12 +140,11 @@ func (cpf *PostForm) CreateWzxyToken() {
 	}
 	flag := true
 	var wt wzxy.TokenWzxy
-	cmd := strings.Split(cpf.Message, ":")
-	if len(cmd) != 6 && len(cmd) != 2 {
+	if len(cmd) != 7 && len(cmd) != 3 {
 		flag = false
-	} else if len(cmd) == 6 {
-		if cmd[1] != "" {
-			if d, err := strconv.Atoi(cmd[1]); err != nil {
+	} else if len(cmd) == 7 {
+		if cmd[2] != "" {
+			if d, err := strconv.Atoi(cmd[2]); err != nil {
 				flag = false
 			} else {
 				wt.Deadline = time.Now().AddDate(0, 0, d)
@@ -124,13 +152,13 @@ func (cpf *PostForm) CreateWzxyToken() {
 		} else {
 			wt.Deadline = time.Now().AddDate(0, 0, 1)
 		}
-		if cmd[2] != "" {
-			wt.CreateUser = cmd[2]
+		if cmd[3] != "" {
+			wt.CreateUser = cmd[3]
 		} else {
 			wt.CreateUser = strconv.Itoa(cpf.UserId)
 		}
-		if cmd[3] != "" {
-			if s, err := strconv.Atoi(cmd[3]); err != nil {
+		if cmd[4] != "" {
+			if s, err := strconv.Atoi(cmd[4]); err != nil {
 				flag = false
 			} else if s == 0 || s == 2 {
 				wt.Status = s
@@ -140,8 +168,8 @@ func (cpf *PostForm) CreateWzxyToken() {
 		} else {
 			wt.Status = 0
 		}
-		if cmd[4] != "" {
-			if t, err := strconv.Atoi(cmd[4]); err != nil {
+		if cmd[5] != "" {
+			if t, err := strconv.Atoi(cmd[5]); err != nil {
 				flag = false
 			} else {
 				wt.Times = t
@@ -151,8 +179,8 @@ func (cpf *PostForm) CreateWzxyToken() {
 		} else {
 			wt.Times = 1
 		}
-		if cmd[4] != "" {
-			if t, err := strconv.Atoi(cmd[4]); err != nil {
+		if cmd[5] != "" {
+			if t, err := strconv.Atoi(cmd[5]); err != nil {
 				flag = false
 			} else if t >= 0 {
 				wt.Times = t
@@ -160,14 +188,14 @@ func (cpf *PostForm) CreateWzxyToken() {
 				flag = false
 			}
 		}
-		if cmd[5] != "" {
-			wt.Organization = cmd[5]
+		if cmd[6] != "" {
+			wt.Organization = cmd[6]
 		} else {
 			wt.Organization = "default"
 		}
-	} else if len(cmd) == 2 {
-		if cmd[1] != "" {
-			if d, err := strconv.Atoi(cmd[1]); err != nil {
+	} else if len(cmd) == 3 {
+		if cmd[2] != "" {
+			if d, err := strconv.Atoi(cmd[2]); err != nil {
 				flag = false
 			} else {
 				wt.Deadline = time.Now().AddDate(0, 0, d)
@@ -183,7 +211,7 @@ func (cpf *PostForm) CreateWzxyToken() {
 		flag = false
 	}
 	if !flag {
-		cpf.SendMsg("格式错误,格式为$wzxyct:alive_days:user:status:times:organization")
+		cpf.SendMsg("格式错误,输入" + yamlConf.AdminUserOrderHeader + "wzxy -c -h查看帮助")
 		return
 	}
 	wt.Token = uuid.NewV4().String()
@@ -193,126 +221,97 @@ func (cpf *PostForm) CreateWzxyToken() {
 	} else {
 		cpf.SendMsg("创建成功,信息为:\n" + wt.String())
 	}
+	return
 }
 
-// 删除我在校园token 格式为$wzxydt:token:user:organization
-
+// 删除我在校园token
 func (cpf *PostForm) DeleteWzxyToken() {
-	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxydt -h" {
+	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -d -h" {
 		msg := "删除我在校园token\n"
 		msg += "格式:\n" +
-			"\t" + yamlConf.AdminUserOrderHeader + "wzxydt:token:user:organization\n"
-		msg += "参数:\n" +
-			"\ttoken:我在校园token\n" +
-			"\tuser:用户名\n" +
-			"\torganization:组织\n"
-		msg += "注意:\n" +
-			"\t该命令会对所有符合条件的token进行删除,但确保至少有一个信息有效\n"
+			"\t" + yamlConf.AdminUserOrderHeader + "wzxy -d -t <token>\t删除对应token\n" +
+			"\t" + yamlConf.AdminUserOrderHeader + "wzxy -d -u <user>\t删除对应用户的所有token\n" +
+			"\t" + yamlConf.AdminUserOrderHeader + "wzxy -d -u <organization>\t删除对应组织的所有token\n"
 		cpf.SendMsg(msg)
 		return
 	}
 	var wt wzxy.TokenWzxy
 	flag := true
-	tag := 0
-	cmd := strings.Split(cpf.Message, ":")
+	cmd := strings.Split(cpf.Message, " ")
 	if len(cmd) != 4 {
 		flag = false
 	} else {
-		if cmd[1] != "" {
-			wt.Token = cmd[1]
-			tag++
-		}
-		if cmd[2] != "" {
-			wt.CreateUser = cmd[2]
-			tag++
-		}
-		if cmd[3] != "" {
+		switch cmd[2] {
+		case "-t":
+			wt.Token = cmd[3]
+		case "-u":
+			wt.CreateUser = cmd[3]
+		case "-o":
 			wt.Organization = cmd[3]
-			tag++
+		default:
+			flag = false
 		}
 	}
 	if !flag {
-		cpf.SendMsg("格式错误,格式为:$wzxydt:token:user:organization")
+		cpf.SendMsg("格式错误,输入" + yamlConf.AdminUserOrderHeader + "wzxy -d -h查看帮助")
 		return
 	}
-	if tag > 0 {
-		many, i, err := gdb.FindWzxyTokenMany(wt)
-		if err != nil {
-			cpf.SendMsg("删除失败")
-			return
-		}
-		for _, tokenWzxy := range many {
-			one, err := gdb.DeleteWzxyTokenOne(tokenWzxy)
-			if err != nil || one <= 0 {
-				cpf.SendMsg(tokenWzxy.Token + "删除失败")
-			}
-		}
-		cpf.SendMsg("影响了" + strconv.Itoa(int(i)) + "条")
-	} else {
-		cpf.SendMsg("格式错误,请确保至少有一个参数带有值")
+	many, i, err := gdb.FindWzxyTokenMany(wt)
+	if err != nil {
+		cpf.SendMsg("删除失败")
 		return
 	}
+	for _, tokenWzxy := range many {
+		one, err := gdb.DeleteWzxyTokenOne(tokenWzxy)
+		if err != nil || one <= 0 {
+			cpf.SendMsg(tokenWzxy.Token + "删除失败")
+		}
+	}
+	cpf.SendMsg("影响了" + strconv.Itoa(int(i)) + "条")
+	return
 }
 
 func (cpf PostForm) FindWzxyToken() {
-	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxyft -h" {
+	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -f -h" {
 		msg := "查找我在校园token信息\n"
 		msg += "格式:\n" +
-			"\t完整命令:" + yamlConf.AdminUserOrderHeader + "wzxyft:token:user:organization\n" +
-			"\t快速查找:" + yamlConf.AdminUserOrderHeader + "wzxyft:token\n"
-		msg += "参数:\n" +
-			"\ttoken:token\n" +
-			"\tuser:用户名\n" +
-			"\torganization:组织\n"
-		msg += "注意:\n" +
-			"\t确保至少有一个信息有效\n"
+			"\t" + yamlConf.AdminUserOrderHeader + "wzxy -f -t <token>\t查找token对应信息\n" +
+			"\t" + yamlConf.AdminUserOrderHeader + "wzxy -f -u <user>\t查找user对应token信息\n" +
+			"\t" + yamlConf.AdminUserOrderHeader + "wzxy -f -o <organization>\t查找organization对应token信息\n"
 		cpf.SendMsg(msg)
 		return
 	}
 	flag := true
-	tag := 0
 	var wt wzxy.TokenWzxy
-	cmd := strings.Split(cpf.Message, ":")
-	if len(cmd) != 4 && len(cmd) != 2 {
+	cmd := strings.Split(cpf.Message, " ")
+	if len(cmd) != 4 {
 		flag = false
-	} else if len(cmd) == 4 {
-		if cmd[1] != "" {
-			wt.Token = cmd[1]
-			tag++
-		}
-		if cmd[2] != "" {
-			wt.CreateUser = cmd[2]
-			tag++
-		}
-		if cmd[3] != "" {
-			wt.Organization = cmd[3]
-			tag++
-		}
-	} else if len(cmd) == 2 {
-		wt.Token = cmd[1]
-		tag++
 	} else {
-		flag = false
+		switch cmd[2] {
+		case "-t":
+			wt.Token = cmd[3]
+		case "-u":
+			wt.CreateUser = cmd[3]
+		case "-o":
+			wt.Organization = cmd[3]
+		default:
+			flag = false
+		}
 	}
 	if !flag {
-		cpf.SendMsg("格式错误,格式为:$wzxyft:token:user:organization")
+		cpf.SendMsg("格式错误,输入" + yamlConf.AdminUserOrderHeader + "wzxy -f -h查看帮助")
 		return
 	}
-	if tag > 0 {
-		many, i, err := gdb.FindWzxyTokenMany(wt)
-		if i == 0 || err != nil {
-			cpf.SendMsg("没有找到相关结果")
-			return
-		}
-		msg := "查找成功,找到了" + strconv.Itoa(int(i)) + "条\n"
-		for _, tokenWzxy := range many {
-			msg += "=========================\n"
-			msg += tokenWzxy.String()
-			msg += "=========================\n"
-		}
-		cpf.SendMsg(msg)
-	} else {
-		cpf.SendMsg("格式错误,请确保至少有一个参数带有值")
+	many, i, err := gdb.FindWzxyTokenMany(wt)
+	if i == 0 || err != nil {
+		cpf.SendMsg("没有找到相关结果")
 		return
 	}
+	msg := "查找成功,找到了" + strconv.Itoa(int(i)) + "条\n"
+	for _, tokenWzxy := range many {
+		msg += "=========================\n"
+		msg += tokenWzxy.String()
+		msg += "=========================\n"
+	}
+	cpf.SendMsg(msg)
 }
