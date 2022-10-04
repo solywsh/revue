@@ -133,28 +133,37 @@ func listenFromSendPrivateMsg(c *gin.Context) {
 	}
 	var rap revueApiPost
 	if c.ShouldBindBodyWith(&rap, binding.JSON) == nil {
-		// do event
-		var cpf cq.PostForm
-		cpf.UserId, _ = strconv.Atoi(rap.UserId)
-		msg, err := cpf.SendPrivateMsg(rap.Message)
-		if err != nil {
+		many, i, err := gdb.FindRevueApiTokenMany(db.RevueApiToken{Token: rap.Token})
+		if err != nil && i != 0 {
 			c.JSON(
 				http.StatusInternalServerError,
 				gin.H{
 					"code": http.StatusInternalServerError,
-					"msg":  msg, // 返回错误信息
+					"msg":  "token查询错误", // 返回错误信息
 				},
 			)
 		} else {
-			c.JSON(
-				http.StatusOK,
-				gin.H{
-					"code": http.StatusOK,
-					"msg":  msg, // 正确返回msg id
-				},
-			)
+			var cpf cq.PostForm
+			cpf.UserId, _ = strconv.Atoi(many[0].UserId)
+			msg, err := cpf.SendPrivateMsg(rap.Message)
+			if err != nil {
+				c.JSON(
+					http.StatusInternalServerError,
+					gin.H{
+						"code": http.StatusInternalServerError,
+						"msg":  msg, // 返回错误信息
+					},
+				)
+			} else {
+				c.JSON(
+					http.StatusOK,
+					gin.H{
+						"code": http.StatusOK,
+						"msg":  msg, // 正确返回msg id
+					},
+				)
+			}
 		}
-
 	} else {
 		c.JSON(
 			http.StatusBadRequest,
@@ -185,13 +194,13 @@ func ginRevueAuthentication() gin.HandlerFunc {
 			c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body)) // 重设body
 			pJson := gojsonq.New().JSONString(string(body))
 			pToken := pJson.Reset().Find("token").(string)
-			pUserId := pJson.Reset().Find("user_id").(string)
-			if res, permission := gdb.SearchRevueApiToken(pUserId, pToken); !res || permission < 4 {
+			_, i, err := gdb.FindRevueApiTokenMany(db.RevueApiToken{Token: pToken})
+			if err != nil && i != 1 {
 				c.JSON(
 					http.StatusForbidden,
 					gin.H{
 						"code": http.StatusForbidden,
-						"msg":  "密钥错误",
+						"msg":  "查询token错误",
 					},
 				)
 				c.Abort() // 结束会话

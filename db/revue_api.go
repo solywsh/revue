@@ -35,6 +35,13 @@ func (gb *GormDb) SearchRevueApiToken(userId, token string) (bool, uint) {
 	}
 }
 
+// FindRevueApiTokenMany 查询多个
+func (gb *GormDb) FindRevueApiTokenMany(rt RevueApiToken) ([]RevueApiToken, int64, error) {
+	var many []RevueApiToken
+	result := gb.DB.Where(rt).Find(&many)
+	return many, result.RowsAffected, result.Error
+}
+
 // ResetRevueApiToken 重新设置token
 func (gb *GormDb) ResetRevueApiToken(userId string) (bool, string) {
 	var rt RevueApiToken

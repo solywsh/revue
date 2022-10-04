@@ -15,7 +15,6 @@
     - `无内鬼来点色图`：R18图片
     - `无内鬼来点{keyword1|keyword2|...}`：根据关键词搜索，exp：`无内鬼来点白毛`
   - 我在校园自动签到：`wzxy -h`查看更多
-  
 - 私聊
   - 消息发送apiToken：`getToken/resetToken/deleteToken`
 - 群聊
@@ -25,12 +24,8 @@
     - 触发：`keyword`
 - 管理员
   - bash命令执行：`$bash <command>`
-  - 我在校园签到服务token：
-    - 创建我在校园token：`$wzxyct <option>`
-    - 删除我在校园token：`$wzxydt <option>`
-    - 查找我在校园token：`$wzxyft <option>`
-- 正在开发
-  - ~~定时任务(交给HB来完成了)~~
+  - 我在校园签到服务token：`$wzxy -h`
+  - 添加监听群组(群聊功能只对监听群组触发)：`$lg -h`
 
 ## 私信发送接口
 
@@ -40,23 +35,41 @@ revue提供了消息发送接口，为方便测试，这里提供一个已经部
 2. 向revues私聊发送`/help`根据提示获取`token`，或直接发送`/getToken`获取。
 3. 向`http://revue.magicode123.cn:5000/send_private_msg`发送对应字段。
 
-| key     | 功能                                                         |
-| ------- | ------------------------------------------------------------ |
-| token   | 获取的token                                                  |
-| user_id | qq号，token和qq为绑定状态，也就是一个token只能对一个qq号发送消息 |
-| message | 消息内容，也可以支持表情，语音，短视频等内容，发送格式为CQ码，参照[CQcode\|帮助中心 ](https://docs.go-cqhttp.org/cqcode/#cqcode) |
+| key         | 功能                                                         |
+| ----------- | ------------------------------------------------------------ |
+| token       | 获取的token                                                  |
+| ~~user_id~~ | ~~qq号，token和qq为绑定状态，也就是一个token只能对一个qq号发送消息~~（处于安全考虑，目前已经不需要传入qq号了） |
+| message     | 消息内容，也可以支持表情，语音，短视频等内容，发送格式为CQ码，参照[CQcode\|帮助中心 ](https://docs.go-cqhttp.org/cqcode/#cqcode) |
 
 - 示例
 
 ```json
 {
     "token":"e0c405ae-95e9-4039-9f1f-4f39f7e6bde4",
-    "user_id":"1228014966",
     "message":"测试"
 }
 ```
 
-以下提供几种demo
+### 使用场景
+
+> 提醒这次ssh登录与上次ip不一致的情况，防止陌生人登录
+
+```shell
+#!/bin/bash
+revue_token=""
+LAST_LOGIN_IP=$(lastlog -u $USER | awk 'NR==2{print $3}')
+THIS_LOGIN_IP=$(who | awk 'NR==1{print $5}' | grep -P '[0-9.]+' -o)
+if [ $LAST_LOGIN_IP != $THIS_LOGIN_IP ]; then
+    THIS_LOGIN_PLACE=$(curl -s "cip.cc/$THIS_LOGIN_IP" | awk 'NR==7{print $3}')
+    HOSTNAME=$(hostname)
+    curl -s --location --request POST 'http://revue.magicode123.cn:5000/send_private_msg' \
+    --header 'Content-Type: text/plain' \
+    --data-raw '{
+        "token":"'$revue_token'",
+        "message":"你的服务器'$HOSTNAME'在'$THIS_LOGIN_PLACE'登录了,IP地址为'$THIS_LOGIN_IP',与上一次登录IP地址'$LAST_LOGIN_IP'不同"
+    }' | grep "&*(#&$*($"
+fi
+```
 
 ### python-requests
 
@@ -181,9 +194,6 @@ adminUser:
 # 管理员命令头,默认"$",则命令类似于"$start"
 # 用于区分是否为命令(虽然具体的命令没有实现就是了)
 adminUserOrderHeader: '$'
-# 监听的qq群
-listenGroup:
-  - 'xxxxxxxxx'
 # 正向鉴权,即向go-cqhttp客户端发送消息时进行鉴权
 forwardAuthentication:
   enable: true # true\false
