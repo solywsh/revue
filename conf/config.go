@@ -16,7 +16,6 @@ var (
 type Config struct {
 	ListenPort            string                `yaml:"listenPort"`            // 监听端口
 	AdminUserOrderHeader  string                `yaml:"adminUserOrderHeader"`  // 管理员命令头 adminUserOrderHeader
-	ListenGroup           []string              `yaml:"listenGroup"`           // 监听群列表
 	ForwardAuthentication ForwardAuthentication `yaml:"forwardAuthentication"` // 正向鉴权 forward authentication
 	ReverseAuthentication ReverseAuthentication `yaml:"reverseAuthentication"` // 反向鉴权 reverse authentication
 	Revue                 Revue                 `yaml:"revue"`                 // revue相关

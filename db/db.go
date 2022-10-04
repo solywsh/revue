@@ -122,7 +122,7 @@ func NewDB() *GormDb {
 			RevueConfig{}, KeywordsReply{}, RevueApiToken{},
 			ProgrammerAlmanac{}, Divination{}, wzxy.UserWzxy{},
 			wzxy.TokenWzxy{}, wzxy.MonitorWzxy{},
-			wzxy.ClassStudentWzxy{}, PostForm{})
+			wzxy.ClassStudentWzxy{}, PostForm{}, ListenGroup{})
 		if err != nil {
 			log.Printf("数据库迁移失败:%s", err)
 			return

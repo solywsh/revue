@@ -63,12 +63,7 @@ func (cpf PostForm) FindMusicEvent() {
 // JudgeListenGroup 判断该群消息是否在监听群号列表中
 func (cpf *PostForm) JudgeListenGroup() bool {
 	groupId := strconv.Itoa(cpf.GroupId)
-	for _, s := range yamlConf.ListenGroup {
-		if s == groupId {
-			return true
-		}
-	}
-	return false
+	return ListenGroup.Has(groupId)
 }
 
 //	AutoGroupMsg 根据群消息自动回复

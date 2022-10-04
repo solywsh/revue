@@ -272,8 +272,8 @@ func handleRemindSign(dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzx
 			log.Println("class name:", monitorWzxy.ClassName,
 				"user name:", userWzxy.Name,
 				"wzxyService UpdateWzxyUserOne err:", err)
-			return
 		}
+		return
 	} else if status == -5 {
 		cpf.SendMsg("获取签到列表失败,未知的错误")
 		return
@@ -283,7 +283,7 @@ func handleRemindSign(dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzx
 		return
 	}
 	var msg string
-	msg += "签到未打卡列表:\n"
+	msg += "未签到列表:\n"
 	for _, uncheck := range uncheckList {
 		many, i, err := gdb.FindClassStudentWzxyMany(wzxy.ClassStudentWzxy{StudentId: uncheck.StudentId})
 		if err != nil {
@@ -298,7 +298,7 @@ func handleRemindSign(dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzx
 			msg += uncheck.Name + "(未添加至数据库) "
 		}
 	}
-	msg += "\n请尽快打卡"
+	msg += "\n请尽快签到"
 	cpf.SendGroupMsg(msg)
 	monitorWzxy.CheckRemindLastDate = dateNow
 	_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)

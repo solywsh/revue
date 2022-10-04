@@ -69,6 +69,7 @@ func (cpf *PostForm) AdminHelp() {
 	msg += "[" + yamlConf.AdminUserOrderHeader + "help]显示菜单\n"
 	msg += "[" + yamlConf.AdminUserOrderHeader + "bash {command}]执行Linux bash命令\n"
 	msg += "[" + yamlConf.AdminUserOrderHeader + "wzxy]我在校园token相关,输入" + yamlConf.AdminUserOrderHeader + "wzxy -h显示更多信息\n"
+	msg += "[" + yamlConf.AdminUserOrderHeader + "lg]监听群消息相关,输入" + yamlConf.AdminUserOrderHeader + "lg -h显示更多信息\n"
 	cpf.SendMsg(msg)
 }
 
@@ -321,9 +322,9 @@ func (cpf *PostForm) HandleAdminListenGroup() {
 	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"lg -c"):
 		cpf.createListenGroup()
 	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"lg -d"):
-		cpf.createListenGroup()
-	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"lg -d"):
-		cpf.createListenGroup()
+		cpf.deleteListenGroup()
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"lg -f"):
+		cpf.findListenGroup()
 	}
 }
 
@@ -331,8 +332,8 @@ func (cpf *PostForm) createListenGroup() {
 	if cpf.Message == yamlConf.AdminUserOrderHeader+"lg -c -h" {
 		msg := "添加监听群组\n"
 		msg += "格式:\n" +
-			"\t命令:" + yamlConf.AdminUserOrderHeader + "lg -c <qq群号>\n" +
-			cpf.SendMsg(msg)
+			"\t" + yamlConf.AdminUserOrderHeader + "lg -c <qq群号>\n"
+		cpf.SendMsg(msg)
 		return
 	}
 	cmd := strings.Split(cpf.Message, " ")
@@ -346,7 +347,7 @@ func (cpf *PostForm) createListenGroup() {
 		lg.UserId = strconv.Itoa(cpf.UserId)
 	}
 	if !flag {
-		cpf.SendMsg("格式错误,输入" + yamlConf.AdminUserOrderHeader + "wzxy -c -h查看帮助")
+		cpf.SendMsg("格式错误,输入" + yamlConf.AdminUserOrderHeader + "lg -c -h查看帮助")
 		return
 	}
 
@@ -360,9 +361,80 @@ func (cpf *PostForm) createListenGroup() {
 }
 
 func (cpf *PostForm) deleteListenGroup() {
-	//todo
+	if cpf.Message == yamlConf.AdminUserOrderHeader+"lg -c -h" {
+		msg := "删除监听群组\n"
+		msg += "格式:\n" +
+			"\t" + yamlConf.AdminUserOrderHeader + "lg -d <qq群号>\n"
+		cpf.SendMsg(msg)
+		return
+	}
+	cmd := strings.Split(cpf.Message, " ")
+	flag := true
+	var lg db.ListenGroup
+	if len(cmd) != 3 {
+		flag = false
+	} else {
+		lg.Group = cmd[2]
+	}
+	if !flag {
+		cpf.SendMsg("格式错误,输入" + yamlConf.AdminUserOrderHeader + "lg -d -h查看帮助")
+		return
+	}
+
+	many, i, err := gdb.FindListenGroupMany(lg)
+	if err != nil {
+		cpf.SendMsg("删除失败")
+		return
+	}
+	miss := 0
+	for _, listenGroup := range many {
+		one, err := gdb.DeleteListenGroupOne(listenGroup)
+		if err != nil || one <= 0 {
+			cpf.SendMsg(listenGroup.Group + "删除失败")
+			miss++
+		}
+	}
+	cpf.SendMsg("影响了" + strconv.Itoa(int(i)-miss) + "条")
+	return
 }
 
 func (cpf *PostForm) findListenGroup() {
-	//todo
+	if cpf.Message == yamlConf.AdminUserOrderHeader+"lg -f -h" {
+		msg := "查找监听群组\n"
+		msg += "格式:\n" +
+			"\t" + yamlConf.AdminUserOrderHeader + "lg -f -g <qq群号>\t查找监听群组对应信息\n" +
+			"\t" + yamlConf.AdminUserOrderHeader + "lg -f -u <用户>\t查找该用户创建的监听群组对应信息\n"
+		cpf.SendMsg(msg)
+		return
+	}
+	cmd := strings.Split(cpf.Message, " ")
+	flag := true
+	var lg db.ListenGroup
+	if len(cmd) != 4 {
+		flag = false
+	} else if cmd[2] == "-g" {
+		lg.Group = cmd[3]
+	} else if cmd[2] == "-u" {
+		lg.UserId = cmd[3]
+	} else {
+		flag = false
+	}
+	if !flag {
+		cpf.SendMsg("格式错误,输入" + yamlConf.AdminUserOrderHeader + "lg -f -h查看帮助")
+		return
+	}
+
+	many, i, err := gdb.FindListenGroupMany(lg)
+	if err != nil {
+		cpf.SendMsg("查找失败")
+		return
+	}
+	msg := "查找成功,找到了" + strconv.Itoa(int(i)) + "条\n"
+	for _, listenGroup := range many {
+		msg += "=========================\n"
+		msg += listenGroup.String()
+		msg += "=========================\n"
+	}
+	cpf.SendMsg(msg)
+	return
 }
