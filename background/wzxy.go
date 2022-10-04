@@ -305,7 +305,6 @@ func handleRemindSign(dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzx
 	if err != nil {
 		log.Println("class name:", monitorWzxy.ClassName,
 			"user name:", userWzxy.Name,
-			"uncheck name:",
 			"wzxyService UpdateWzxyMonitorOne err:", err)
 		return
 	}

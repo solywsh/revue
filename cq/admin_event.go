@@ -2,6 +2,7 @@ package cq
 
 import (
 	uuid "github.com/satori/go.uuid"
+	"github.com/solywsh/qqBot-revue/db"
 	"github.com/solywsh/qqBot-revue/service/wzxy"
 	"os/exec"
 	"runtime"
@@ -54,47 +55,13 @@ func (cpf *PostForm) AdminEvent() {
 	// case "$bash" 对系统执行命令
 	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"bash"):
 		cpf.BashCommand()
+	// case "$wzxy" 我在校园token相关
 	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy"):
 		cpf.HandleAdminWzxy()
-	//// 创建我在校园token 格式为$wzxyct:alive_days:user:status:times:organization
-	//case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxyct"):
-	//	cpf.CreateWzxyToken()
-	//// 删除我在校园token 格式为$wzxydt:token:user:organization
-	//case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxydt"):
-	//	cpf.DeleteWzxyToken()
-	//// 查找token信息 格式为$wzxyft:token:user:organization
-	//case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxyft"):
-	//	cpf.FindWzxyToken()
-	// Listen group
+	// case "$listen" 监听群消息
 	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"lg"):
-		//todo listen group
+		cpf.HandleAdminListenGroup()
 	}
-}
-
-func (cpf *PostForm) HandleAdminWzxy() {
-	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -h" {
-		msg := "我在校园Token管理\n"
-		msg += "使用方法:\n"
-		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -c\t注册我在校园Token,输入" + yamlConf.AdminUserOrderHeader + "wzxy -c -h显示更多信息\n"
-		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -d\t删除我在校园Token,输入" + yamlConf.AdminUserOrderHeader + "wzxy -d -h显示更多信息\n"
-		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -f\t查找我在校园Token,输入" + yamlConf.AdminUserOrderHeader + "wzxy -f -h显示更多信息\n"
-		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -h\t查看帮助\n"
-		cpf.SendMsg(msg)
-		return
-	}
-	switch {
-	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy -c"):
-		cpf.CreateWzxyToken()
-	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy -d"):
-		cpf.DeleteWzxyToken()
-	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy -f"):
-		cpf.FindWzxyToken()
-	}
-
-}
-
-func (cpf *PostForm) HandleAdminListenGroup() {
-
 }
 
 func (cpf *PostForm) AdminHelp() {
@@ -121,8 +88,30 @@ func (cpf *PostForm) BashCommand() {
 	cpf.SendMsg(res)
 }
 
-// CreateWzxyToken 创建我在校园token 格式为$wzxy -c <alive_days> <user> <status> <times> <organization>
-func (cpf *PostForm) CreateWzxyToken() {
+func (cpf *PostForm) HandleAdminWzxy() {
+	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -h" {
+		msg := "我在校园Token管理\n"
+		msg += "使用方法:\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -c\t注册我在校园Token,输入" + yamlConf.AdminUserOrderHeader + "wzxy -c -h显示更多信息\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -d\t删除我在校园Token,输入" + yamlConf.AdminUserOrderHeader + "wzxy -d -h显示更多信息\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -f\t查找我在校园Token,输入" + yamlConf.AdminUserOrderHeader + "wzxy -f -h显示更多信息\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "wzxy -h\t查看帮助\n"
+		cpf.SendMsg(msg)
+		return
+	}
+	switch {
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy -c"):
+		cpf.createWzxyToken()
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy -d"):
+		cpf.deleteWzxyToken()
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"wzxy -f"):
+		cpf.findWzxyToken()
+	}
+
+}
+
+// createWzxyToken 创建我在校园token 格式为$wzxy -c <alive_days> <user> <status> <times> <organization>
+func (cpf *PostForm) createWzxyToken() {
 	cmd := strings.Split(cpf.Message, " ")
 	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -c -h" {
 		msg := "创建我在校园token\n"
@@ -224,8 +213,8 @@ func (cpf *PostForm) CreateWzxyToken() {
 	return
 }
 
-// 删除我在校园token
-func (cpf *PostForm) DeleteWzxyToken() {
+// deleteWzxyToken 删除我在校园token
+func (cpf *PostForm) deleteWzxyToken() {
 	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -d -h" {
 		msg := "删除我在校园token\n"
 		msg += "格式:\n" +
@@ -271,7 +260,8 @@ func (cpf *PostForm) DeleteWzxyToken() {
 	return
 }
 
-func (cpf PostForm) FindWzxyToken() {
+// findWzxyToken 查询我在校园token
+func (cpf PostForm) findWzxyToken() {
 	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -f -h" {
 		msg := "查找我在校园token信息\n"
 		msg += "格式:\n" +
@@ -314,4 +304,65 @@ func (cpf PostForm) FindWzxyToken() {
 		msg += "=========================\n"
 	}
 	cpf.SendMsg(msg)
+}
+
+func (cpf *PostForm) HandleAdminListenGroup() {
+	if cpf.Message == yamlConf.AdminUserOrderHeader+"lg -h" {
+		msg := "监听群消息\n"
+		msg += "使用方法:\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "lg -c\t注册监听群消息,输入" + yamlConf.AdminUserOrderHeader + "lg -c -h显示更多信息\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "lg -d\t删除监听群消息,输入" + yamlConf.AdminUserOrderHeader + "lg -d -h显示更多信息\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "lg -f\t查找监听群消息,输入" + yamlConf.AdminUserOrderHeader + "lg -f -h显示更多信息\n"
+		msg += "\t" + yamlConf.AdminUserOrderHeader + "lg -h\t查看帮助\n"
+		cpf.SendMsg(msg)
+		return
+	}
+	switch {
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"lg -c"):
+		cpf.createListenGroup()
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"lg -d"):
+		cpf.createListenGroup()
+	case strings.HasPrefix(cpf.Message, yamlConf.AdminUserOrderHeader+"lg -d"):
+		cpf.createListenGroup()
+	}
+}
+
+func (cpf *PostForm) createListenGroup() {
+	if cpf.Message == yamlConf.AdminUserOrderHeader+"lg -c -h" {
+		msg := "添加监听群组\n"
+		msg += "格式:\n" +
+			"\t命令:" + yamlConf.AdminUserOrderHeader + "lg -c <qq群号>\n" +
+			cpf.SendMsg(msg)
+		return
+	}
+	cmd := strings.Split(cpf.Message, " ")
+	flag := true
+	var lg db.ListenGroup
+	if len(cmd) != 3 {
+		flag = false
+	} else {
+		lg.Group = cmd[2]
+		lg.Date = time.Now().Format("2006-01-02 15:04:05")
+		lg.UserId = strconv.Itoa(cpf.UserId)
+	}
+	if !flag {
+		cpf.SendMsg("格式错误,输入" + yamlConf.AdminUserOrderHeader + "wzxy -c -h查看帮助")
+		return
+	}
+
+	count, err := gdb.InsertListenGroupOne(lg)
+	if err != nil || count <= 0 {
+		cpf.SendMsg("创建失败")
+	} else {
+		cpf.SendMsg("创建成功,信息为:\n" + lg.String())
+	}
+	return
+}
+
+func (cpf *PostForm) deleteListenGroup() {
+	//todo
+}
+
+func (cpf *PostForm) findListenGroup() {
+	//todo
 }

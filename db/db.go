@@ -133,3 +133,10 @@ func NewDB() *GormDb {
 	})
 	return gb
 }
+
+func (lg *ListenGroup) String() string {
+	msg := "监听群号:" + lg.Group + "\n"
+	msg += "设置时间:" + lg.Date + "\n"
+	msg += "设置用户:" + lg.UserId + "\n"
+	return msg
+}
