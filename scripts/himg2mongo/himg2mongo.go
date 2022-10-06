@@ -133,16 +133,19 @@ func count() {
 			allNum++
 			missNum++
 			res := float64((allNum-missNum)*100) / float64(allNum)
-			fmt.Println("data had!", fmt.Sprintf("命中率:%f %%", res))
+			if allNum%100 == 0 {
+				fmt.Println(fmt.Sprintf("命中率:%f %%", res))
+			}
 			if res <= 0.00001 && allNum > 10000 {
 				finalCh <- 1 // 发送结束信号
 			}
 			continue
 		case <-allNumCh:
 			allNum++
-			res := float64((allNum-missNum)*100) / float64(allNum)
-			fmt.Println("insert success!!", fmt.Sprintf("命中率:%f %%", res))
-
+			if allNum%100 == 0 {
+				res := float64((allNum-missNum)*100) / float64(allNum)
+				fmt.Println(fmt.Sprintf("命中率:%f %%", res))
+			}
 			continue
 		}
 	}
