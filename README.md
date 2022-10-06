@@ -35,11 +35,11 @@ revue提供了消息发送接口，为方便测试，这里提供一个已经部
 2. 向revues私聊发送`/help`根据提示获取`token`，或直接发送`/getToken`获取。
 3. 向`http://revue.magicode123.cn:5000/send_private_msg`发送对应字段。
 
-| key         | 功能                                                                 |
-| ----------- |--------------------------------------------------------------------|
-| token       | 获取的token                                                           |
+| key         | 功能                                                         |
+| ----------- | ------------------------------------------------------------ |
+| token       | 获取的token                                                  |
 | ~~user_id~~ | ~~qq号，token和qq为绑定状态，也就是一个token只能对一个qq号发送消息~~（出于安全考虑，目前已经不需要传入qq号了） |
-| message     | 消息内容，也可以支持表情，语音，短视频等内容，发送格式为CQ码，参照[CQcode\                         |帮助中心 ](https://docs.go-cqhttp.org/cqcode/#cqcode) |
+| message     | 消息内容，也可以支持表情，语音，短视频等内容，发送格式为CQ码，参照[CQcode\|帮助中心 ](https://docs.go-cqhttp.org/cqcode/#cqcode) |
 
 - 示例
 
