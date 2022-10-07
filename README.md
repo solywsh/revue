@@ -31,7 +31,7 @@
 
 revue提供了消息发送接口，为方便测试，这里提供一个已经部署好的示例，请按照以下步骤操作：
 
-1. 添加revue测试QQ机器人`3056159050`为好友。
+1. 添加revue测试QQ机器人`3056159050`为好友。（如果没有及时通过好友申请，请邮件告知我：me@kfccrazythursday.buzz）
 2. 向revues私聊发送`/help`根据提示获取`token`，或直接发送`/getToken`获取。
 3. 向`http://revue.magicode123.cn:5000/send_private_msg`发送对应字段。
 
@@ -54,11 +54,13 @@ revue提供了消息发送接口，为方便测试，这里提供一个已经部
 
 > 提醒这次ssh登录与上次ip不一致的情况，防止陌生人登录
 
+将下面文件保存，然后在`.bashrc`或`.zshrc`最后加上`bash <文件路径>`即可，这样每次启动时都可对登陆者ip进行检查。
+
 ```shell
 #!/bin/bash
-revue_token=""
+revue_token="" # 填入自己的revue token，向机器人申请
 LAST_LOGIN_IP=$(lastlog -u $USER | awk 'NR==2{print $3}')
-THIS_LOGIN_IP=$(who | awk 'NR==1{print $5}' | grep -P '[0-9.]+' -o)
+THIS_LOGIN_IP=$(who | grep -P '([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))){3}' -o | awk 'NR==1')
 if [ $LAST_LOGIN_IP != $THIS_LOGIN_IP ]; then
     THIS_LOGIN_PLACE=$(curl -s "cip.cc/$THIS_LOGIN_IP" | awk 'NR==7{print $3}')
     HOSTNAME=$(hostname)
@@ -70,6 +72,10 @@ if [ $LAST_LOGIN_IP != $THIS_LOGIN_IP ]; then
     }' | grep "&*(#&$*($"
 fi
 ```
+
+**效果：**
+
+![img](http://cdnimg.violetwsh.com/img/A2FD185EF8DFC04DD368F995DE323819.png)
 
 ### python-requests
 
