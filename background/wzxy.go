@@ -259,9 +259,23 @@ func handleRemindSign(dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzx
 		"wzxyService 签到提醒")
 	uncheckList, status := userWzxy.GetUnSignedList()
 	if status == -1 {
+		monitorWzxy.CheckRemindLastDate = dateNow
+		_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+		if err != nil {
+			log.Println("class name:", monitorWzxy.ClassName,
+				"user name:", userWzxy.Name,
+				"wzxyService UpdateWzxyMonitorOne err:", err)
+		}
 		cpf.SendMsg("获取未签到列表信息失败,网络错误")
 		return
 	} else if status == -3 {
+		monitorWzxy.CheckRemindLastDate = dateNow
+		_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+		if err != nil {
+			log.Println("class name:", monitorWzxy.ClassName,
+				"user name:", userWzxy.Name,
+				"wzxyService UpdateWzxyMonitorOne err:", err)
+		}
 		cpf.SendMsg("获取未签到列表失败,不在签到时间范围内")
 		return
 	} else if status == -4 {
