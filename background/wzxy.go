@@ -290,10 +290,24 @@ func handleRemindSign(dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzx
 		return
 	} else if status == -5 {
 		cpf.SendMsg("获取签到列表失败,未知的错误")
+		monitorWzxy.CheckRemindLastDate = dateNow
+		_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+		if err != nil {
+			log.Println("class name:", monitorWzxy.ClassName,
+				"user name:", userWzxy.Name,
+				"wzxyService UpdateWzxyMonitorOne err:", err)
+		}
 		return
 	}
 	if len(uncheckList) == 0 {
 		cpf.SendGroupMsg("今天所有人都已经打卡了")
+		monitorWzxy.CheckRemindLastDate = dateNow
+		_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+		if err != nil {
+			log.Println("class name:", monitorWzxy.ClassName,
+				"user name:", userWzxy.Name,
+				"wzxyService UpdateWzxyMonitorOne err:", err)
+		}
 		return
 	}
 	var msg string
