@@ -166,7 +166,7 @@ func wzxyService() {
 				userWzxy.JwsessionStatus {
 				handleClassDailyCheck(1, dateNow, monitorWzxy, userWzxy)
 			}
-			if timeNow < MorningCheckEndTime &&
+			if timeNow < AfternoonCheckEndTime &&
 				monitorWzxy.AfternoonCheckEnable &&
 				monitorWzxy.AfternoonCheckTime < timeNow &&
 				monitorWzxy.AfternoonCheckLastDate < dateNow &&
