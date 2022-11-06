@@ -159,7 +159,7 @@ func GetGroupList() (string, error) {
 		return "", err
 	}
 	rJson := gojsonq.New().JSONString(string(post.Body()))
-	fmt.Println(string(post.Body()))
+	//fmt.Println(string(post.Body()))
 	if rJson.Reset().Find("retcode") != nil && rJson.Reset().Find("retcode").(float64) != 0.0 {
 		return "", fmt.Errorf(string(post.Body()))
 	}

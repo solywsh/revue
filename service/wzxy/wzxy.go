@@ -2,7 +2,6 @@ package wzxy
 
 import (
 	"errors"
-	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/thedevsaddam/gojsonq"
 	"log"
@@ -176,7 +175,6 @@ func (u UserWzxy) getSignMessage() (res int, signId, logId string) {
 	if err != nil {
 		return -1, "", ""
 	}
-	//fmt.Println(string(post.Body()))
 	pJson := gojsonq.New().JSONString(string(post.Body()))
 	if int(pJson.Reset().Find("code").(float64)) == 0 {
 		signTimeStart := pJson.Reset().Find("data.[0].start")
@@ -191,7 +189,6 @@ func (u UserWzxy) getSignMessage() (res int, signId, logId string) {
 			// 在签到区间
 			signId = pJson.Reset().Find("data.[0].id").(string)
 			logId = pJson.Reset().Find("data.[0].logId").(string)
-			//fmt.Println(signId, logId)
 			// 不在签到区间
 			return -3, "", ""
 		}
@@ -419,7 +416,6 @@ func (u UserWzxy) doGetUnsignedList(signId string) ([]ClassStudentWzxy, int) {
 }
 
 func (u UserWzxy) ClassCheckOperate(seq int, w ClassStudentWzxy) (res int, message string) {
-	fmt.Println("开始")
 	client := resty.New()
 	payload := strings.NewReader(`{"location":"陕西省/西安市/鄠邑区","t1":"是","t2":"绿色","t3":"是","type":0}`)
 	post, err := client.R().SetHeaders(map[string]string{
@@ -431,20 +427,16 @@ func (u UserWzxy) ClassCheckOperate(seq int, w ClassStudentWzxy) (res int, messa
 		"User-Agent":     "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.29(0x18001d34) NetType/WIFI Language/zh_CN miniProgram/wxce6d08f781975d91",
 	}).SetBody(payload).Post("https://gw.wozaixiaoyuan.com/health/mobile/manage/agentSave?logId=" + w.checkId)
 	if err != nil {
-		fmt.Println("失败")
 		log.Println(u.Name, "代打卡失败，网络错误", "seq=", seq, "class=", w.ClassName, err.Error())
 		return -1, "网络错误"
 	}
 
 	postJson := gojsonq.New().JSONString(post.String())
-	fmt.Println(post.String())
 	if int(postJson.Reset().Find("code").(float64)) == 0 {
-		fmt.Println("请求以发送，打卡成功")
 		log.Println(u.Name, "代打卡成功", "seq=", "class=", w.ClassName, seq)
 		// 正常
 		return 0, ""
 	} else {
-		fmt.Println("请求以发送，打卡失败")
 		log.Println(u.Name, "代打卡失败", "seq=", seq, "class=", w.ClassName, post.String())
 		res = int(postJson.Reset().Find("code").(float64))
 		message = postJson.Reset().Find("message").(string)

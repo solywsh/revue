@@ -95,7 +95,7 @@ func (cpf *PostForm) GetAnswer() {
 // CommonEvent 对通用消息响应
 func (cpf *PostForm) CommonEvent() (flag bool) {
 	flag = true
-	cpf.RepeatOperation() // 对adminUSer复读防止风控
+	//cpf.RepeatOperation() // 对adminUSer复读防止风控
 	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
 	switch {
 	case cpf.Message == "/help":
@@ -128,7 +128,7 @@ func (cpf *PostForm) CommonEvent() (flag bool) {
 
 // HandleUserWzxy 我在校园打卡命令逻辑
 func (cpf PostForm) HandleUserWzxy() {
-	fmt.Println(cpf.Message)
+	//fmt.Println(cpf.Message)
 	if cpf.Message == "wzxy -h" {
 		msg := "我在校园打卡\n"
 		msg += "使用方法:\n"
@@ -672,7 +672,6 @@ func (cpf PostForm) HandleClassWzxy() {
 			return
 		}
 		if strings.HasPrefix(cpf.Message, "classwzxy -c -a -m") && len(cmd) == 5 {
-			fmt.Println("[" + cmd[4] + "]")
 			var csws []wzxy.ClassStudentWzxy
 			err := json.Unmarshal([]byte("["+cmd[4]+"]"), &csws)
 			if err != nil {
@@ -764,7 +763,6 @@ func (cpf PostForm) HandleClassWzxy() {
 			} else {
 				taskStatus = false
 			}
-			fmt.Println(taskStatus)
 			switch cmd[2] {
 			case "morning":
 				monitorWzxy.MorningCheckEnable = taskStatus
