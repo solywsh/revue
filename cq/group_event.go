@@ -66,7 +66,7 @@ func (cpf *PostForm) JudgeListenGroup() bool {
 	return ListenGroup.Has(groupId)
 }
 
-//	AutoGroupMsg 根据群消息自动回复
+// AutoGroupMsg 根据群消息自动回复
 func (cpf *PostForm) AutoGroupMsg() {
 	if res, kr := gdb.SearchKeywordsReply(cpf.Message); res {
 		_, err := cpf.SendGroupMsg(kr.Msg)

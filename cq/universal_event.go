@@ -95,7 +95,7 @@ func (cpf *PostForm) GetAnswer() {
 // CommonEvent 对通用消息响应
 func (cpf *PostForm) CommonEvent() (flag bool) {
 	flag = true
-	// cpf.RepeatOperation() // 对adminUSer复读防止风控
+	cpf.RepeatOperation() // 对adminUSer复读防止风控
 	//fmt.Println("收到群消息:", cpf.Message, cpf.UserId)
 	switch {
 	case cpf.Message == "/help":
@@ -128,6 +128,7 @@ func (cpf *PostForm) CommonEvent() (flag bool) {
 
 // HandleUserWzxy 我在校园打卡命令逻辑
 func (cpf PostForm) HandleUserWzxy() {
+	fmt.Println(cpf.Message)
 	if cpf.Message == "wzxy -h" {
 		msg := "我在校园打卡\n"
 		msg += "使用方法:\n"
@@ -390,6 +391,7 @@ func (cpf PostForm) HandleClassWzxy() {
 		msg += "\tclasswzxy -on/off morning/afternoon/check/all\t开启/关闭管理提醒任务\n"
 		msg += "\tclasswzxy -do morning/afternoon/check\t手动代签(暂未开放)\n"
 		msg += "\tclasswzxy -c\t添加学生信息,输入classwzxy -c -h查看更多\n"
+		msg += "\tclasswzxy -open/close morning/afternoon/check/all\t开启/关闭全班代打卡任务\n"
 		msg += "\tclasswzxy -h\t查看帮助\n"
 		cpf.SendMsg(msg)
 		return
@@ -442,6 +444,12 @@ func (cpf PostForm) HandleClassWzxy() {
 				CheckRemindEnable:       false,
 				CheckRemindTime:         "23:00",
 				CheckRemindLastDate:     "2006-01-02",
+				MorningCheckEnable:      true,
+				MorningCheckTime:        "11:40",
+				MorningCheckLastDate:    "2006-01-02",
+				AfternoonCheckEnable:    true,
+				AfternoonCheckTime:      "17:40",
+				AfternoonCheckLastDate:  "2006-01-02",
 			})
 			if err != nil {
 				cpf.SendMsg("注册失败")
@@ -491,14 +499,15 @@ func (cpf PostForm) HandleClassWzxy() {
 		}
 		return
 	}
-	// 修改信息
+	// 修改信息 classwzxy -m -a check 15:04
 	if strings.HasPrefix(cpf.Message, "classwzxy -m") {
 		if strings.HasPrefix(cpf.Message, "classwzxy -m -h") {
 			msg := "我在校园班级管理信息修改\n"
 			msg += "classwzxy -m -h\t查看帮助\n"
 			msg += "classwzxy -m -c <班级>\t修改班级\n"
 			msg += "classwzxy -m -g <qq群>\t修改qq群\n"
-			msg += "classwzxy -m  morning/afternoon/check 15:04\t修改[晨检/午检/签到]提醒时间,时间格式为15:04"
+			msg += "classwzxy -m  morning/afternoon/check 15:04\t修改[晨检/午检/签到]提醒时间,时间格式为15:04\n"
+			msg += "classwzxy -m -a morning/afternoon/check 15:20\t修改全班[晨检/午检/签到]代签卡时间,时间格式为15:04"
 			cpf.SendMsg(msg)
 			return
 		}
@@ -521,6 +530,22 @@ func (cpf PostForm) HandleClassWzxy() {
 			}
 			cpf.SendMsg("修改成功")
 			return
+		}
+		if len(cmd) == 5 && strings.HasPrefix(cpf.Message, "classwzxy -m -a") {
+			switch cmd[3] {
+			case "morning":
+				monitorWzxy.MorningCheckTime = cmd[4]
+			case "afternoon":
+				monitorWzxy.AfternoonCheckTime = cmd[4]
+				//case "check":monitorWzxy.CheckTime = cmd[4]
+			default:
+				cpf.SendMsg("修改失败,请输入classwzxy -m -h查看帮助")
+			}
+			res, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, false)
+			if err != nil || res != 1 {
+				cpf.SendMsg("修改失败")
+				return
+			}
 		}
 		if len(cmd) == 4 && (cmd[2] == "morning" || cmd[2] == "afternoon" || cmd[2] == "check") {
 			// todo check cmd[3] is time
@@ -728,4 +753,35 @@ func (cpf PostForm) HandleClassWzxy() {
 			return
 		}
 	}
+
+	// 开启/关闭 代替打卡
+	if strings.HasPrefix(cpf.Message, "classwzxy -open") ||
+		strings.HasPrefix(cpf.Message, "classwzxy -close") {
+		if len(cmd) == 3 {
+			var taskStatus bool
+			if cmd[1] == "-open" {
+				taskStatus = true
+			} else {
+				taskStatus = false
+			}
+			fmt.Println(taskStatus)
+			switch cmd[2] {
+			case "morning":
+				monitorWzxy.MorningCheckEnable = taskStatus
+				gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+			case "afternoon":
+				monitorWzxy.AfternoonCheckEnable = taskStatus
+				gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+			case "all":
+				monitorWzxy.AfternoonCheckEnable = taskStatus
+				monitorWzxy.MorningCheckEnable = taskStatus
+				gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+			default:
+				cpf.SendMsg("修改失败,请输入classwzxy -h 查看帮助")
+			}
+			cpf.SendMsg(monitorWzxy.String())
+
+		}
+	}
+
 }

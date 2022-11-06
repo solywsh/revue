@@ -1,6 +1,7 @@
 package cq
 
 import (
+	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"github.com/solywsh/qqBot-revue/db"
 	"github.com/solywsh/qqBot-revue/service/wzxy"
@@ -13,7 +14,9 @@ import (
 
 // RepeatOperation 对adminUser进行复读操作,用于防止风控(在处于listen状态下的群使用)
 func (cpf *PostForm) RepeatOperation() {
+	fmt.Println(1)
 	for _, s := range yamlConf.AdminUser {
+		fmt.Println(s)
 		if strconv.Itoa(cpf.UserId) == s {
 			cpf.SendGroupMsg("[复读机](在防止风控中)" + cpf.Message)
 		}

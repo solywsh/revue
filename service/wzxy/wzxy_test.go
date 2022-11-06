@@ -14,3 +14,22 @@ func TestUserWzxy_GetUncheckList(t *testing.T) {
 	fmt.Println(code)
 	fmt.Println(list)
 }
+
+func TestClassStudentCheck(t *testing.T) {
+
+	uw := UserWzxy{
+		Jwsession: "a7a63b0d3ccd47b28c262ba6cd8915b0",
+	}
+
+	uc := ClassStudentWzxy{
+		StudentId: "",
+		Name:      "",
+		ID:        2,
+		ClassName: "",
+		UserId:    "",
+		checkId:   "509359067697779115",
+	}
+	_, message := uw.ClassCheckOperate(2, uc)
+	fmt.Println("message:" + message)
+
+}

@@ -72,7 +72,7 @@ func init() {
 	gdb = db.NewDB() // 初始化操作数据库
 }
 
-//  格式化url，根据配置文件是否开启鉴权格式化
+// 格式化url，根据配置文件是否开启鉴权格式化
 func formatAccessUrl(str string) string {
 	if yamlConf.ForwardAuthentication.Enable {
 		return yamlConf.UrlHeader + str + "?access_token=" + yamlConf.ForwardAuthentication.Token
@@ -141,13 +141,13 @@ func (cpf *PostForm) SendGroupMsg(msg string) (string, error) {
 }
 
 // SendMsg
-//  @Description: 发送消息
-//  @param userId private时对方的qq
-//  @param groupId group时群号
-//  @param message 消息
-//  @param autoEscape 是否解析CQ码
-//  @return string 返回message_id
 //
+//	@Description: 发送消息
+//	@param userId private时对方的qq
+//	@param groupId group时群号
+//	@param message 消息
+//	@param autoEscape 是否解析CQ码
+//	@return string 返回message_id
 func (cpf *PostForm) SendMsg(message string) string {
 	postData := map[string]string{
 		"message_type": cpf.MessageType,
@@ -170,9 +170,9 @@ func (cpf *PostForm) SendMsg(message string) string {
 }
 
 // DeleteMsg
-//  @Description: 撤回消息
-//  @param messageId 需要撤回的消息Id
 //
+//	@Description: 撤回消息
+//	@param messageId 需要撤回的消息Id
 func (cpf *PostForm) DeleteMsg() {
 	client := resty.New()
 	_, _ = client.R().SetQueryParams(map[string]string{
@@ -181,9 +181,9 @@ func (cpf *PostForm) DeleteMsg() {
 }
 
 // DeleteFriend
-//  @Description: 删除好友
-//  @param friendId 好友qq号
 //
+//	@Description: 删除好友
+//	@param friendId 好友qq号
 func (cpf *PostForm) DeleteFriend() {
 	client := resty.New()
 	_, _ = client.R().SetQueryParams(map[string]string{

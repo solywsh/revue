@@ -2,6 +2,7 @@ package wzxy
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/thedevsaddam/gojsonq"
 	"log"
@@ -57,6 +58,14 @@ type MonitorWzxy struct {
 	CheckRemindEnable   bool   // 晚检提醒开启
 	CheckRemindTime     string // 晚检提醒时间
 	CheckRemindLastDate string // 晚检提醒日期
+
+	MorningCheckEnable   bool   // 晨检代打开启
+	MorningCheckTime     string // 晨检代打时间
+	MorningCheckLastDate string // 晨检代打日期
+
+	AfternoonCheckEnable   bool   // 午检代打开启
+	AfternoonCheckTime     string // 午检代打时间
+	AfternoonCheckLastDate string // 午检代打日期
 }
 
 type ClassStudentWzxy struct {
@@ -119,6 +128,7 @@ func (u UserWzxy) GetDailyUncheckList(seq int) ([]ClassStudentWzxy, error) {
 				Name:      data.(map[string]interface{})["name"].(string),
 				ClassName: data.(map[string]interface{})["classes"].(string),
 				StudentId: data.(map[string]interface{})["number"].(string),
+				checkId:   data.(map[string]interface{})["id"].(string),
 			}
 			uncheckList = append(uncheckList, csw)
 		}
@@ -309,26 +319,42 @@ func (wm MonitorWzxy) String() string {
 	msg += "晨检提醒状态："
 	if wm.MorningRemindEnable {
 		msg += "开启\n"
+		msg += "晨检提醒时间：" + wm.MorningRemindTime + "\n"
 	} else {
 		msg += "关闭\n"
 	}
-	msg += "晨检提醒时间：" + wm.MorningRemindTime + "\n"
 
 	msg += "午检提醒状态："
 	if wm.AfternoonRemindEnable {
 		msg += "开启\n"
+		msg += "午检提醒时间：" + wm.AfternoonRemindTime + "\n"
 	} else {
 		msg += "关闭\n"
 	}
-	msg += "午检提醒时间：" + wm.AfternoonRemindTime + "\n"
 
 	msg += "晚检签到提醒状态(该功能暂未开放)："
 	if wm.CheckRemindEnable {
 		msg += "开启\n"
+		msg += "晚检签到提醒时间：" + wm.CheckRemindTime + "\n"
 	} else {
 		msg += "关闭\n"
 	}
-	msg += "晚检签到提醒时间：" + wm.CheckRemindTime + "\n"
+
+	msg += "晨检代签到状态："
+	if wm.MorningCheckEnable {
+		msg += "开启\n"
+		msg += "晨检代签时间：" + wm.MorningCheckTime + "\n"
+	} else {
+		msg += "关闭\n"
+	}
+
+	msg += "午检代签状态："
+	if wm.AfternoonCheckEnable {
+		msg += "开启\n"
+		msg += "晨检代签时间：" + wm.AfternoonCheckTime + "\n"
+	} else {
+		msg += "关闭\n"
+	}
 
 	return msg
 }
@@ -390,4 +416,38 @@ func (u UserWzxy) doGetUnsignedList(signId string) ([]ClassStudentWzxy, int) {
 		uncheckList = append(uncheckList, csw)
 	}
 	return uncheckList, 0
+}
+
+func (u UserWzxy) ClassCheckOperate(seq int, w ClassStudentWzxy) (res int, message string) {
+	fmt.Println("开始")
+	client := resty.New()
+	payload := strings.NewReader(`{"location":"陕西省/西安市/鄠邑区","t1":"是","t2":"绿色","t3":"是","type":0}`)
+	post, err := client.R().SetHeaders(map[string]string{
+		"Cookie":         "JWSESSION=" + u.Jwsession,
+		"JWSESSION":      u.Jwsession,
+		"Content-Length": strconv.Itoa(payload.Len()),
+		"HOST":           "gw.wozaixiaoyuan.com",
+		"Connection":     "keep-alive",
+		"User-Agent":     "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.29(0x18001d34) NetType/WIFI Language/zh_CN miniProgram/wxce6d08f781975d91",
+	}).SetBody(payload).Post("https://gw.wozaixiaoyuan.com/health/mobile/manage/agentSave?logId=" + w.checkId)
+	if err != nil {
+		fmt.Println("失败")
+		log.Println(u.Name, "代打卡失败，网络错误", "seq=", seq, "class=", w.ClassName, err.Error())
+		return -1, "网络错误"
+	}
+
+	postJson := gojsonq.New().JSONString(post.String())
+	fmt.Println(post.String())
+	if int(postJson.Reset().Find("code").(float64)) == 0 {
+		fmt.Println("请求以发送，打卡成功")
+		log.Println(u.Name, "代打卡成功", "seq=", "class=", w.ClassName, seq)
+		// 正常
+		return 0, ""
+	} else {
+		fmt.Println("请求以发送，打卡失败")
+		log.Println(u.Name, "代打卡失败", "seq=", seq, "class=", w.ClassName, post.String())
+		res = int(postJson.Reset().Find("code").(float64))
+		message = postJson.Reset().Find("message").(string)
+		return res, message
+	}
 }
