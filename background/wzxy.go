@@ -165,7 +165,13 @@ func wzxyService() {
 				monitorWzxy.MorningCheckLastDate < dateNow &&
 				userWzxy.JwsessionStatus {
 				handleClassDailyCheck(1, dateNow, monitorWzxy, userWzxy)
-				handleRemindCheckDaily(1, dateNow, monitorWzxy, userWzxy)
+			}
+			if timeNow < MorningCheckEndTime &&
+				monitorWzxy.AfternoonCheckEnable &&
+				monitorWzxy.AfternoonCheckTime < timeNow &&
+				monitorWzxy.AfternoonCheckLastDate < dateNow &&
+				userWzxy.JwsessionStatus {
+				handleClassDailyCheck(2, dateNow, monitorWzxy, userWzxy)
 			}
 		}
 		time.Sleep(5 * time.Minute)
