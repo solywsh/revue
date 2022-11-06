@@ -423,6 +423,6 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 	message := "今日代打情况\n"
 	message += "代打成功:" + strconv.Itoa(success) + "/" + strconv.Itoa(failed) + "\n"
 	message += "代打失败:" + strconv.Itoa(failed) + "/" + strconv.Itoa(failed) + "\n"
-	message += "代打人员:" + unchecknames
+	// message += "代打人员:" + unchecknames
 	cpf.SendMsg(message)
 }
