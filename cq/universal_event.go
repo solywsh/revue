@@ -546,6 +546,8 @@ func (cpf PostForm) HandleClassWzxy() {
 				cpf.SendMsg("修改失败")
 				return
 			}
+			cpf.SendMsg("修改成功")
+			return
 		}
 		if len(cmd) == 4 && (cmd[2] == "morning" || cmd[2] == "afternoon" || cmd[2] == "check") {
 			// todo check cmd[3] is time
