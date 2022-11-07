@@ -353,9 +353,13 @@ func handleRemindSign(dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzx
 }
 
 func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzxy.UserWzxy) {
+	var task string
+	if seq == 1 {
+		task = "晨检"
+	} else {
+		task = "午检"
+	}
 
-	// 获取未打卡列表
-	uncheckList, err := userWzxy.GetDailyUncheckList(seq)
 	userId, _ := strconv.Atoi(userWzxy.UserId)
 	groupId, _ := strconv.Atoi(monitorWzxy.ClassGroupId)
 	cpf := cq.PostForm{
@@ -363,6 +367,8 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 		GroupId:     groupId,
 		MessageType: "private", // private group
 	}
+
+	uncheckList, err := userWzxy.GetDailyUncheckList(seq)
 	if err != nil {
 		if strings.Contains(err.Error(), "未登录") {
 			log.Println("class name:", monitorWzxy.ClassName,
@@ -388,41 +394,48 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 		return
 	}
 
-	// 循环打卡
-	success, failed := 0, 0
-	unchecknames := ""
-	for _, unckeck := range uncheckList {
-		res, _ := userWzxy.ClassCheckOperate(seq, unckeck)
-		if res != 0 {
-			failed++
-		} else {
-			unchecknames += unckeck.Name + "\t"
-			success++
+	success := 0
+	nums := len(uncheckList)
+	// 多次循环代签
+	for i := 0; i < 5; i++ {
+		if len(uncheckList) == 0 {
+			break
 		}
-	}
-	if seq == 1 {
-		monitorWzxy.MorningCheckLastDate = dateNow
-		_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
-		if err != nil {
-			log.Println("class name:", monitorWzxy.ClassName,
-				"user name:", userWzxy.Name,
-				"wzxyService UpdateWzxyMonitorOne err:", err)
-			return
+		//unchecknames := ""
+		for _, uncheck := range uncheckList {
+			res, _ := userWzxy.ClassCheckOperate(seq, uncheck)
+			if res == 0 {
+				success++
+				//unchecknames += unckeck.Name + "\t"
+			}
 		}
-	} else if seq == 2 {
-		monitorWzxy.AfternoonCheckLastDate = dateNow
-		_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
-		if err != nil {
-			log.Println("class name:", monitorWzxy.ClassName,
-				"user name:", userWzxy.Name,
-				"wzxyService UpdateWzxyMonitorOne err:", err)
-			return
+		if seq == 1 {
+			monitorWzxy.MorningCheckLastDate = dateNow
+			_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+			if err != nil {
+				log.Println("class name:", monitorWzxy.ClassName,
+					"user name:", userWzxy.Name,
+					"wzxyService UpdateWzxyMonitorOne err:", err)
+				return
+			}
+		} else if seq == 2 {
+			monitorWzxy.AfternoonCheckLastDate = dateNow
+			_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+			if err != nil {
+				log.Println("class name:", monitorWzxy.ClassName,
+					"user name:", userWzxy.Name,
+					"wzxyService UpdateWzxyMonitorOne err:", err)
+				return
+			}
 		}
+		time.Sleep(time.Second * 1)
+		// 重新获取未打卡列表
+		uncheckList, _ = userWzxy.GetDailyUncheckList(seq)
 	}
 
-	message := "今日代打情况\n"
-	message += "代打成功:" + strconv.Itoa(success) + "/" + strconv.Itoa(failed) + "\n"
-	message += "代打失败:" + strconv.Itoa(failed) + "/" + strconv.Itoa(failed) + "\n"
-	message += "代打人员:" + unchecknames
+	message := "今日" + task + "代签情况\n"
+	message += "代签成功: " + strconv.Itoa(success) + "\n"
+	message += "代签失败: " + strconv.Itoa(nums-success) + "\n"
+	message += "总计代签人数: " + strconv.Itoa(nums)
 	cpf.SendMsg(message)
 }

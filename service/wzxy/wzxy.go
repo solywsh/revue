@@ -118,7 +118,7 @@ func (u UserWzxy) GetDailyUncheckList(seq int) ([]ClassStudentWzxy, error) {
 			message := getJson.Reset().Find("message").(string)
 			return nil, errors.New(message)
 		}
-		uncheckData := getJson.Reset().From("data").Select("number", "name", "classes").Get()
+		uncheckData := getJson.Reset().From("data").Select("number", "name", "classes", "id").Get()
 		if len(uncheckData.([]interface{})) == 0 {
 			break
 		}
@@ -329,7 +329,7 @@ func (wm MonitorWzxy) String() string {
 		msg += "关闭\n"
 	}
 
-	msg += "晚检签到提醒状态(该功能暂未开放)："
+	msg += "晚检签到提醒状态(暂未开放)："
 	if wm.CheckRemindEnable {
 		msg += "开启\n"
 		msg += "晚检签到提醒时间：" + wm.CheckRemindTime + "\n"
@@ -337,22 +337,22 @@ func (wm MonitorWzxy) String() string {
 		msg += "关闭\n"
 	}
 
-	msg += "晨检代签到状态："
+	msg += "晨检代签状态："
 	if wm.MorningCheckEnable {
 		msg += "开启\n"
-		msg += "晨检代签时间：" + wm.MorningCheckTime + "\n"
+
 	} else {
 		msg += "关闭\n"
 	}
-
+	msg += "晨检代签时间：" + wm.MorningCheckTime + "\n"
 	msg += "午检代签状态："
 	if wm.AfternoonCheckEnable {
 		msg += "开启\n"
-		msg += "晨检代签时间：" + wm.AfternoonCheckTime + "\n"
+
 	} else {
 		msg += "关闭\n"
 	}
-
+	msg += "午检代签时间：" + wm.AfternoonCheckTime + "\n"
 	return msg
 }
 
