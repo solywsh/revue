@@ -118,7 +118,7 @@ func (u UserWzxy) GetDailyUncheckList(seq int) ([]ClassStudentWzxy, error) {
 			message := getJson.Reset().Find("message").(string)
 			return nil, errors.New(message)
 		}
-		uncheckData := getJson.Reset().From("data").Select("number", "name", "classes").Get()
+		uncheckData := getJson.Reset().From("data").Select("number", "name", "classes", "id").Get()
 		if len(uncheckData.([]interface{})) == 0 {
 			break
 		}
@@ -348,7 +348,7 @@ func (wm MonitorWzxy) String() string {
 	msg += "午检代签状态："
 	if wm.AfternoonCheckEnable {
 		msg += "开启\n"
-		msg += "晨检代签时间：" + wm.AfternoonCheckTime + "\n"
+		msg += "午检代签时间：" + wm.AfternoonCheckTime + "\n"
 	} else {
 		msg += "关闭\n"
 	}
