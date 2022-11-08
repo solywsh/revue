@@ -224,26 +224,27 @@ func handleRemindCheckDaily(seq int, dateNow string, monitorWzxy wzxy.MonitorWzx
 	if len(uncheckList) == 0 {
 		cpf.SendGroupMsg("今天所有人都已经打卡了")
 		return
-	}
-	var msg string
-	msg += keywords + "未打卡列表:\n"
-	for _, uncheck := range uncheckList {
-		many, i, err := gdb.FindClassStudentWzxyMany(wzxy.ClassStudentWzxy{StudentId: uncheck.StudentId})
-		if err != nil {
-			log.Println("class name:", monitorWzxy.ClassName,
-				"user name:", userWzxy.Name,
-				"seq:", seq,
-				"uncheck name:", uncheck.Name,
-				"wzxyService FindClassStudentWzxyMany:", err)
-			continue
-		} else if i == 1 {
-			msg += cq.GetCqCodeAt(many[0].UserId, "") + " "
-		} else if i == 0 {
-			msg += uncheck.Name + "(未添加至数据库) "
+	} else {
+		var msg string
+		msg += keywords + "未打卡列表:\n"
+		for _, uncheck := range uncheckList {
+			many, i, err := gdb.FindClassStudentWzxyMany(wzxy.ClassStudentWzxy{StudentId: uncheck.StudentId})
+			if err != nil {
+				log.Println("class name:", monitorWzxy.ClassName,
+					"user name:", userWzxy.Name,
+					"seq:", seq,
+					"uncheck name:", uncheck.Name,
+					"wzxyService FindClassStudentWzxyMany:", err)
+				continue
+			} else if i == 1 {
+				msg += cq.GetCqCodeAt(many[0].UserId, "") + " "
+			} else if i == 0 {
+				msg += uncheck.Name + "(未添加至数据库) "
+			}
 		}
+		msg += "\n请尽快打卡"
+		cpf.SendGroupMsg(msg)
 	}
-	msg += "\n请尽快打卡"
-	cpf.SendGroupMsg(msg)
 	if seq == 1 {
 		monitorWzxy.MorningRemindLastDate = dateNow
 	} else {

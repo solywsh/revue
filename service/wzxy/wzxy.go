@@ -427,17 +427,17 @@ func (u UserWzxy) ClassCheckOperate(seq int, w ClassStudentWzxy) (res int, messa
 		"User-Agent":     "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.29(0x18001d34) NetType/WIFI Language/zh_CN miniProgram/wxce6d08f781975d91",
 	}).SetBody(payload).Post("https://gw.wozaixiaoyuan.com/health/mobile/manage/agentSave?logId=" + w.checkId)
 	if err != nil {
-		log.Println(u.Name, "代打卡失败，网络错误", "seq=", seq, "class=", w.ClassName, err.Error())
+		log.Println(u.Name, "代打卡失败，网络错误", "seq=", seq, "class=", w.ClassName, w.Name, err.Error())
 		return -1, "网络错误"
 	}
 
 	postJson := gojsonq.New().JSONString(post.String())
 	if int(postJson.Reset().Find("code").(float64)) == 0 {
-		log.Println(u.Name, "代打卡成功", "seq=", "class=", w.ClassName, seq)
+		log.Println(u.Name, "代打卡成功", "seq=", seq, "class=", w.Name, w.ClassName, seq)
 		// 正常
 		return 0, ""
 	} else {
-		log.Println(u.Name, "代打卡失败", "seq=", seq, "class=", w.ClassName, post.String())
+		log.Println(u.Name, "代打卡失败", "seq=", seq, "class=", w.ClassName, w.ClassName, post.String())
 		res = int(postJson.Reset().Find("code").(float64))
 		message = postJson.Reset().Find("message").(string)
 		return res, message
