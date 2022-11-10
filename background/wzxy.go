@@ -354,12 +354,6 @@ func handleRemindSign(dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzx
 }
 
 func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy, userWzxy wzxy.UserWzxy) {
-	var task string
-	if seq == 1 {
-		task = "晨检"
-	} else {
-		task = "午检"
-	}
 
 	userId, _ := strconv.Atoi(userWzxy.UserId)
 	groupId, _ := strconv.Atoi(monitorWzxy.ClassGroupId)
@@ -411,7 +405,7 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 			}
 		}
 		if seq == 1 {
-			monitorWzxy.MorningCheckLastDate = dateNow
+
 			_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
 			if err != nil {
 				log.Println("class name:", monitorWzxy.ClassName,
@@ -420,7 +414,7 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 				return
 			}
 		} else if seq == 2 {
-			monitorWzxy.AfternoonCheckLastDate = dateNow
+
 			_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
 			if err != nil {
 				log.Println("class name:", monitorWzxy.ClassName,
@@ -432,6 +426,15 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 		time.Sleep(time.Second * 1)
 		// 重新获取未打卡列表
 		uncheckList, _ = userWzxy.GetDailyUncheckList(seq)
+	}
+
+	var task string
+	if seq == 1 {
+		monitorWzxy.MorningCheckLastDate = dateNow
+		task = "晨检"
+	} else {
+		monitorWzxy.AfternoonCheckLastDate = dateNow
+		task = "午检"
 	}
 
 	message := "今日" + task + "代签情况\n"
