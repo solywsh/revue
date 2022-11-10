@@ -223,7 +223,6 @@ func handleRemindCheckDaily(seq int, dateNow string, monitorWzxy wzxy.MonitorWzx
 	}
 	if len(uncheckList) == 0 {
 		cpf.SendGroupMsg("今天所有人都已经打卡了")
-		return
 	} else {
 		var msg string
 		msg += keywords + "未打卡列表:\n"

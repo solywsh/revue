@@ -94,7 +94,7 @@ func cq2db(form cq.PostForm) db.PostForm {
 	}
 }
 
-//  SHA1 加密进行鉴权
+// SHA1 加密进行鉴权
 func hmacSHA1Encrypt(encryptKey string, encryptText []byte) string {
 	key := []byte(encryptKey)
 	mac := hmac.New(sha1.New, key)
@@ -125,12 +125,13 @@ func ginReverseAuthentication() gin.HandlerFunc {
 	}
 }
 
-//  监听revue发送私聊消息的接口
+// 监听revue发送私聊消息的接口
 func listenFromSendPrivateMsg(c *gin.Context) {
 	// 如果revue没开启直接结束
 	if !yamlConf.Revue.Enable {
 		c.Abort()
 	}
+	// 如果revue开启了,则进行验证
 	var rap revueApiPost
 	if c.ShouldBindBodyWith(&rap, binding.JSON) == nil {
 		many, i, err := gdb.FindRevueApiTokenMany(db.RevueApiToken{Token: rap.Token})
