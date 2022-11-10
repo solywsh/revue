@@ -405,7 +405,6 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 			}
 		}
 		if seq == 1 {
-
 			_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
 			if err != nil {
 				log.Println("class name:", monitorWzxy.ClassName,
@@ -414,7 +413,6 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 				return
 			}
 		} else if seq == 2 {
-
 			_, err := gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
 			if err != nil {
 				log.Println("class name:", monitorWzxy.ClassName,
@@ -435,6 +433,13 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 	} else {
 		monitorWzxy.AfternoonCheckLastDate = dateNow
 		task = "午检"
+	}
+	_, err = gdb.UpdateMonitorWzxyOne(monitorWzxy, true)
+	if err != nil {
+		log.Println("class name:", monitorWzxy.ClassName,
+			"user name:", userWzxy.Name,
+			"wzxyService UpdateWzxyMonitorOne err:", err)
+		return
 	}
 
 	message := "今日" + task + "代签情况\n"
