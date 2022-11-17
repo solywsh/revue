@@ -422,9 +422,25 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 		}
 		time.Sleep(time.Second * 1)
 		// 重新获取未打卡列表
-		uncheckList, _ = userWzxy.GetDailyUncheckList(seq)
+		uncheckList, err = userWzxy.GetDailyUncheckList(seq)
+		if err != nil {
+			log.Println("class name:", monitorWzxy.ClassName,
+				"user name:", userWzxy.Name,
+				"seq:", seq,
+				"wzxyService GetDailyUncheckList err:", err)
+			cpf.SendMsg("获取未打卡列表失败")
+			return
+		}
 	}
-
+	uncheckList, err = userWzxy.GetDailyUncheckList(seq)
+	if err != nil {
+		log.Println("class name:", monitorWzxy.ClassName,
+			"user name:", userWzxy.Name,
+			"seq:", seq,
+			"wzxyService GetDailyUncheckList err:", err)
+		cpf.SendMsg("获取未打卡列表失败")
+		return
+	}
 	var task string
 	if seq == 1 {
 		monitorWzxy.MorningCheckLastDate = dateNow
@@ -442,8 +458,8 @@ func handleClassDailyCheck(seq int, dateNow string, monitorWzxy wzxy.MonitorWzxy
 	}
 
 	message := "今日" + task + "代签情况\n"
-	message += "代签成功: " + strconv.Itoa(success) + "\n"
-	message += "代签失败: " + strconv.Itoa(nums-success) + "\n"
+	message += "代签成功: " + strconv.Itoa(nums-len(uncheckList)) + "\n"
+	message += "代签失败: " + strconv.Itoa(len(uncheckList)) + "\n"
 	message += "总计代签人数: " + strconv.Itoa(nums)
 	cpf.SendMsg(message)
 }
