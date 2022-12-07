@@ -37,3 +37,6 @@ Database:
     charset: 'utf8mb4'
     username: '' # 数据库用户名
     password: '' # 数据库密码
+ChatGPT:
+  enable: false # true\false
+  apiKey: ''

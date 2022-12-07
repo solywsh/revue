@@ -22,6 +22,8 @@
     - 添加：`开始添加`
     - 删除：`删除自动回复:[keyword]`
     - 触发：`keyword`
+  - chatgpt
+    - 开始悟道/可以了： `开始/结束与chatgpt的对话`
 - 管理员
   - bash命令执行：`$bash <command>`
   - 我在校园签到服务token：`$wzxy -h`
@@ -33,7 +35,7 @@ revue提供了消息发送接口，为方便测试，这里提供一个已经部
 
 1. 添加revue测试QQ机器人`3056159050`为好友。（如果没有及时通过好友申请，请邮件告知我：me@kfccrazythursday.buzz）
 2. 向revues私聊发送`/help`根据提示获取`token`，或直接发送`/getToken`获取。
-3. 向`http://revue.magicode123.cn:5000/send_private_msg`发送对应字段。
+3. 向`http://revue.api.panic.ltd:5000/send_private_msg`发送对应字段。
 
 | key         | 功能                                                         |
 | ----------- | ------------------------------------------------------------ |
@@ -64,7 +66,7 @@ THIS_LOGIN_IP=$(who | grep -P '([0,1]?\d{1,2}|2([0-4][0-9]|5[0-5]))(\.([0,1]?\d{
 if [ $LAST_LOGIN_IP != $THIS_LOGIN_IP ]; then
     THIS_LOGIN_PLACE=$(curl -s "cip.cc/$THIS_LOGIN_IP" | awk 'NR==7{print $3}')
     HOSTNAME=$(hostname)
-    curl -s --location --request POST 'http://revue.magicode123.cn:5000/send_private_msg' \
+    curl -s --location --request POST 'http://revue.api.panic.ltd:5000/send_private_msg' \
     --header 'Content-Type: text/plain' \
     --data-raw '{
         "token":"'$revue_token'",
@@ -83,7 +85,7 @@ fi
 import requests
 import json
 
-url = "http://revue.magicode123.cn:5000/send_private_msg"
+url = "http://revue.api.panic.ltd:5000/send_private_msg"
 
 payload = json.dumps({
   "token": "<token>",
@@ -110,7 +112,7 @@ import (
 )
 
 func main() {
-	url := "http://revue.magicode123.cn:5000/send_private_msg"
+	url := "http://revue.api.panic.ltd:5000/send_private_msg"
 	client := resty.New()
 	post, err := client.R().SetHeaders(map[string]string{
 		"Content-Type": "application/json",
@@ -138,7 +140,7 @@ var data = JSON.stringify({
 
 var config = {
   method: 'post',
-  url: 'http://revue.magicode123.cn:5000/send_private_msg',
+  url: 'http://revue.api.panic.ltd:5000/send_private_msg',
   headers: { 
     'Content-Type': 'application/json'
   },

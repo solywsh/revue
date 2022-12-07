@@ -1,14 +1,14 @@
 package cq
 
 import (
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/solywsh/qqBot-revue/db"
 	"log"
 	"time"
 )
 
 var (
-	ListenGroup = cmap.New()
+	ListenGroup = cmap.New[struct{}]()
 )
 
 func ListenGroupService() {
@@ -18,11 +18,9 @@ func ListenGroupService() {
 			log.Println("ListenGroupService FindListenGroupMany err:", err)
 			return
 		}
+		ListenGroup.Clear()
 		for _, group := range manyListenGroup {
-			ListenGroup.Clear()
-			if !ListenGroup.Has(group.Group) {
-				ListenGroup.Set(group.Group, struct{}{})
-			}
+			ListenGroup.Set(group.Group, struct{}{})
 		}
 		time.Sleep(time.Minute * 5)
 	}

@@ -77,6 +77,15 @@ type ListenGroup struct {
 	Group  string //群号
 }
 
+// UserSession 用户会话控制
+type UserSession struct {
+	ID         uint      `gorm:"primaryKey;autoIncrement"`
+	UserId     string    //用户id,QQ号
+	AppName    string    //应用名称
+	Status     uint      //状态,各个服务区分,0为初始
+	UpdateTime time.Time //更新时间
+}
+
 // GormDb 这里对GormDb重新封装了一下
 type GormDb struct {
 	DB *gorm.DB
@@ -99,7 +108,6 @@ func NewDB() *GormDb {
 		)
 		gb = new(GormDb) // 由于定义的是地址,在使用前需要先分配内存
 		if yamlConfig.Database.Sqlite.Enable {
-
 			log.Println("检测到使用sqlite数据库")
 			// 使用sqlite数据库
 			gb.DB, _ = gorm.Open(
@@ -122,7 +130,7 @@ func NewDB() *GormDb {
 			RevueConfig{}, KeywordsReply{}, RevueApiToken{},
 			ProgrammerAlmanac{}, Divination{}, wzxy.UserWzxy{},
 			wzxy.TokenWzxy{}, wzxy.MonitorWzxy{},
-			wzxy.ClassStudentWzxy{}, PostForm{}, ListenGroup{})
+			wzxy.ClassStudentWzxy{}, PostForm{}, ListenGroup{}, UserSession{})
 		if err != nil {
 			log.Printf("数据库迁移失败:%s", err)
 			return

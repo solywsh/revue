@@ -63,6 +63,7 @@ func (cpf *PostForm) SendMenu() {
 		s += "群聊菜单:\n"
 		s += "\t[开始添加] 添加自动回复\n"
 		s += "\t[删除自动回复:{关键词}] 删除自动回复\n"
+		s += "\t[开始悟道/可以了] 开始/结束与chatgpt对话\n"
 		cpf.SendMsg(s)
 	}
 }
@@ -127,7 +128,7 @@ func (cpf *PostForm) CommonEvent() (flag bool) {
 }
 
 // HandleUserWzxy 我在校园打卡命令逻辑
-func (cpf PostForm) HandleUserWzxy() {
+func (cpf *PostForm) HandleUserWzxy() {
 	//fmt.Println(cpf.Message)
 	if cpf.Message == "wzxy -h" {
 		msg := "我在校园打卡\n"
@@ -378,7 +379,7 @@ func (cpf PostForm) HandleUserWzxy() {
 }
 
 // HandleClassWzxy 处理班级打卡命令逻辑
-func (cpf PostForm) HandleClassWzxy() {
+func (cpf *PostForm) HandleClassWzxy() {
 	if cpf.Message == "classwzxy -h" {
 		msg := "我在校园班级管理\n"
 		msg += "**此功能需要班长或者安全委员权限**\n"

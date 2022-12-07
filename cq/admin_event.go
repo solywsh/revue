@@ -262,7 +262,7 @@ func (cpf *PostForm) deleteWzxyToken() {
 }
 
 // findWzxyToken 查询我在校园token
-func (cpf PostForm) findWzxyToken() {
+func (cpf *PostForm) findWzxyToken() {
 	if cpf.Message == yamlConf.AdminUserOrderHeader+"wzxy -f -h" {
 		msg := "查找我在校园token信息\n"
 		msg += "格式:\n" +

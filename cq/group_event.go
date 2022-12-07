@@ -2,6 +2,8 @@ package cq
 
 import (
 	"github.com/go-resty/resty/v2"
+	cmap "github.com/orcaman/concurrent-map/v2"
+	"github.com/solywsh/chatgpt"
 	"github.com/solywsh/qqBot-revue/db"
 	"github.com/solywsh/qqBot-revue/mongo_service"
 	"github.com/thedevsaddam/gojsonq"
@@ -41,7 +43,7 @@ func (cpf *PostForm) KeywordsReplyAddEvent(rate uint, krId uint) {
 }
 
 // KeywordsReplyDeleteEvent 关键词删除事件处理
-func (cpf PostForm) KeywordsReplyDeleteEvent() {
+func (cpf *PostForm) KeywordsReplyDeleteEvent() {
 	keywords := strings.TrimPrefix(cpf.Message, "删除自动回复:")
 	if res, kr := gdb.SearchKeywordsReply(keywords); res {
 		gdb.DeleteKeywordsReply(kr.ID)
@@ -52,7 +54,7 @@ func (cpf PostForm) KeywordsReplyDeleteEvent() {
 }
 
 // FindMusicEvent 查找音乐事件处理
-func (cpf PostForm) FindMusicEvent() {
+func (cpf *PostForm) FindMusicEvent() {
 	if res, musicId := Music163(strings.TrimPrefix(cpf.Message, "查找音乐")); res {
 		cpf.SendMsg(GetCqCodeMusic("163", musicId))
 	} else {
@@ -188,7 +190,18 @@ func (cpf *PostForm) GroupEvent() {
 	case strings.HasPrefix(cpf.Message, "搜索答案"):
 		// 搜索答案
 		cpf.GetAnswer()
+	case cpf.Message == "开始悟道":
+		if yamlConf.ChatGPT.Enable {
+			cpf.ChatGPTEvent(1)
+		}
+	case cpf.Message == "可以了":
+		if yamlConf.ChatGPT.Enable {
+			cpf.ChatGPTEvent(3)
+		}
 	default:
+		if yamlConf.ChatGPT.Enable {
+			cpf.ChatGPTEvent(2)
+		}
 		// 添加自动回复(关键词/回复内容)
 		if res, kr := gdb.GetKeywordsReplyFlag(strconv.Itoa(cpf.UserId)); res {
 			cpf.KeywordsReplyAddEvent(kr.Flag+1, kr.ID)
@@ -196,5 +209,68 @@ func (cpf *PostForm) GroupEvent() {
 			// 自动回复
 			cpf.AutoGroupMsg()
 		}
+
+	}
+}
+
+const ChatGPTName = "chat_gpt"
+
+var (
+	chatMap = cmap.New[*Chat]()
+)
+
+type Chat struct {
+	ChatGPT     *chatgpt.ChatGPT
+	UserSession *db.UserSession
+}
+
+// ChatGPTEvent status = 1 初始化，status = 2 判断/响应 status = 3 结束
+func (cpf *PostForm) ChatGPTEvent(status int) {
+	switch status {
+	case 1:
+		userSession, err := gdb.FindOrCreateUserSession(strconv.Itoa(cpf.UserId), ChatGPTName)
+		if err != nil {
+			cpf.SendMsg("发生错误" + err.Error())
+			return
+		}
+		userSession.Status = 1 // 激活状态
+		userSession.UpdateTime = time.Now()
+		ok, err := gdb.UpdateUserSessionMany(userSession, true)
+		if err != nil || !ok {
+			cpf.SendMsg("发生错误" + err.Error())
+			return
+		}
+		chatMap.Set(strconv.Itoa(cpf.UserId), &Chat{
+			ChatGPT:     chatgpt.New(yamlConf.ChatGPT.ApiKey, strconv.Itoa(cpf.UserId)),
+			UserSession: &userSession,
+		})
+		cpf.SendMsg("请说")
+	case 2:
+		chat, ok := chatMap.Get(strconv.Itoa(cpf.UserId))
+		if !ok || chat.UserSession.AppName != ChatGPTName || chat.UserSession.Status != 1 {
+			return
+		}
+		ans, err := chat.ChatGPT.Chat(cpf.Message)
+		if err != nil {
+			cpf.SendMsg("发生错误" + err.Error())
+			return
+		}
+		chat.UserSession.UpdateTime = time.Now()
+		cpf.SendMsg(ans)
+
+	case 3:
+		chat, ok := chatMap.Get(strconv.Itoa(cpf.UserId))
+		if !ok || chat.UserSession.AppName != ChatGPTName || chat.UserSession.Status != 1 {
+			return
+		}
+		chat.UserSession.Status = 2 // 关闭状态
+		chat.UserSession.UpdateTime = time.Now()
+		ok, err := gdb.UpdateUserSessionMany(*chat.UserSession, true)
+		if err != nil || !ok {
+			cpf.SendMsg("发生错误" + err.Error())
+			return
+		}
+		chatMap.Remove(strconv.Itoa(cpf.UserId))
+		cpf.SendMsg("结束与你的对话")
 	}
 }

@@ -23,6 +23,7 @@ type Config struct {
 	SelfId                string                `yaml:"selfId"`                // 机器人的qq
 	AdminUser             []string              `yaml:"adminUser"`             // 管理员列表
 	Database              Database              `yaml:"Database"`              // 数据库相关
+	ChatGPT               ChatGPT               `yaml:"ChatGPT"`               // 聊天机器人相关
 }
 
 // ForwardAuthentication 正向鉴权相关
@@ -74,6 +75,12 @@ type Mongo struct {
 type HImgDB struct {
 	Enable bool   `yaml:"enable"`
 	Url    string `yaml:"url"`
+}
+
+// ChatGPT 机器人
+type ChatGPT struct {
+	Enable bool   `yaml:"enable"`
+	ApiKey string `yaml:"apiKey"`
 }
 
 const yamlPath = "./config.yaml"
