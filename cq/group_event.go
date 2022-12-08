@@ -1,6 +1,7 @@
 package cq
 
 import (
+	"fmt"
 	"github.com/go-resty/resty/v2"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/solywsh/chatgpt"
@@ -240,16 +241,19 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 			cpf.SendMsg("发生错误" + err.Error())
 			return
 		}
-		cg := chatgpt.New(yamlConf.ChatGPT.ApiKey, strconv.Itoa(cpf.UserId), time.Minute*10)
 		chatMap.Set(strconv.Itoa(cpf.UserId), &Chat{
-			ChatGPT:     cg,
+			ChatGPT:     chatgpt.New(yamlConf.ChatGPT.ApiKey, strconv.Itoa(cpf.UserId), time.Minute*10),
 			UserSession: &userSession,
 		})
 		go func() {
-			select {
-			case <-cg.GetTimeOutChan():
-				cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 结束与你的对话")
+			if v, ok := chatMap.Get(strconv.Itoa(cpf.UserId)); ok {
+				select {
+				case <-v.ChatGPT.GetTimeOutChan():
+					cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 结束与你的对话")
+					chatMap.Remove(strconv.Itoa(cpf.UserId))
+				}
 			}
+
 		}()
 		cpf.SendMsg("请说")
 	case 2:
@@ -257,6 +261,7 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 		if !ok || chat.UserSession.AppName != ChatGPTName || chat.UserSession.Status != 1 {
 			return
 		}
+		fmt.Println(ok, chat.UserSession.AppName, chat.UserSession.Status)
 		ans, err := chat.ChatGPT.Chat(cpf.Message)
 		if err != nil {
 			switch {
@@ -298,7 +303,6 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 		}
 		if v, ok := chatMap.Get(strconv.Itoa(cpf.UserId)); ok {
 			v.ChatGPT.Close()
-			chatMap.Remove(strconv.Itoa(cpf.UserId))
 		}
 	}
 }
