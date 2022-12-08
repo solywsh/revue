@@ -261,6 +261,13 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 			return
 		}
 		chat.UserSession.UpdateTime = time.Now()
+		for len(ans) > 0 {
+			if ans[0] == '\n' || ans[0] == ' ' {
+				ans = ans[1:]
+			} else {
+				break
+			}
+		}
 		cpf.SendMsg(ans)
 
 	case 3:
