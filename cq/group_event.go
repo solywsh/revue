@@ -252,7 +252,12 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 		}
 		ans, err := chat.ChatGPT.Chat(cpf.Message)
 		if err != nil {
-			cpf.SendMsg("发生错误" + err.Error())
+			switch {
+			case strings.Contains(err.Error(), "Timeout"):
+				cpf.SendMsg("回答超时")
+			default:
+				cpf.SendMsg("未知错误" + err.Error())
+			}
 			return
 		}
 		chat.UserSession.UpdateTime = time.Now()
