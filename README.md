@@ -33,7 +33,7 @@
 
 revue提供了消息发送接口，为方便测试，这里提供一个已经部署好的示例，请按照以下步骤操作：
 
-1. 添加revue测试QQ机器人`3056159050`为好友。（如果没有及时通过好友申请，请邮件告知我：me@kfccrazythursday.buzz）
+1. 添加revue测试QQ机器人`3056159050`为好友。（如果没有及时通过好友申请，请邮件告知我：dont@panic.ltd）
 2. 向revues私聊发送`/help`根据提示获取`token`，或直接发送`/getToken`获取。
 3. 向`http://revue.api.panic.ltd:5000/send_private_msg`发送对应字段。
 

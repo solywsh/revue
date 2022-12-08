@@ -262,14 +262,19 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 		}
 		chat.UserSession.UpdateTime = time.Now()
 		for len(ans) > 0 {
-			if ans[0] == '\n' || ans[0] == ' ' {
+			if ans[0] == '\n' ||
+				ans[0] == ' ' ||
+				ans[0] == '\t' ||
+				ans[0] == '\r' ||
+				ans[0] == '?' ||
+				ans[0] == '.' ||
+				ans[0] == '!' {
 				ans = ans[1:]
 			} else {
 				break
 			}
 		}
 		cpf.SendMsg(ans)
-
 	case 3:
 		chat, ok := chatMap.Get(strconv.Itoa(cpf.UserId))
 		if !ok || chat.UserSession.AppName != ChatGPTName || chat.UserSession.Status != 1 {
