@@ -8,7 +8,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/satori/go.uuid v1.2.0
-	github.com/solywsh/chatgpt v0.0.4
+	github.com/solywsh/chatgpt v0.0.7
 	github.com/thedevsaddam/gojsonq v2.3.0+incompatible
 	go.mongodb.org/mongo-driver v1.11.0
 	gorm.io/driver/mysql v1.4.4

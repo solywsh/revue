@@ -240,10 +240,17 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 			cpf.SendMsg("发生错误" + err.Error())
 			return
 		}
+		cg := chatgpt.New(yamlConf.ChatGPT.ApiKey, strconv.Itoa(cpf.UserId), time.Minute*10)
 		chatMap.Set(strconv.Itoa(cpf.UserId), &Chat{
-			ChatGPT:     chatgpt.New(yamlConf.ChatGPT.ApiKey, strconv.Itoa(cpf.UserId)),
+			ChatGPT:     cg,
 			UserSession: &userSession,
 		})
+		go func() {
+			select {
+			case <-cg.GetTimeOutChan():
+				cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 结束与你的对话")
+			}
+		}()
 		cpf.SendMsg("请说")
 	case 2:
 		chat, ok := chatMap.Get(strconv.Itoa(cpf.UserId))
@@ -270,6 +277,8 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 				ans[0] == '.' ||
 				ans[0] == '!' {
 				ans = ans[1:]
+			} else if len(ans) >= 2 && ans[:2] == "？" {
+				ans = ans[2:]
 			} else {
 				break
 			}
@@ -287,7 +296,9 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 			cpf.SendMsg("发生错误" + err.Error())
 			return
 		}
-		chatMap.Remove(strconv.Itoa(cpf.UserId))
-		cpf.SendMsg("结束与你的对话")
+		if v, ok := chatMap.Get(strconv.Itoa(cpf.UserId)); ok {
+			v.ChatGPT.Close()
+			chatMap.Remove(strconv.Itoa(cpf.UserId))
+		}
 	}
 }
