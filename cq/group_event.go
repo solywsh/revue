@@ -266,7 +266,9 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 		if err != nil {
 			switch {
 			case strings.Contains(err.Error(), "Timeout"):
-				cpf.SendMsg("回答超时")
+				cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 回答超时")
+			case strings.Contains(err.Error(), "context canceled"):
+				cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 对话已关闭")
 			default:
 				cpf.SendMsg("未知错误" + err.Error())
 			}
