@@ -1,7 +1,6 @@
 package cq
 
 import (
-	"fmt"
 	"github.com/go-resty/resty/v2"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/solywsh/chatgpt"
@@ -261,7 +260,6 @@ func (cpf *PostForm) ChatGPTEvent(status int) {
 		if !ok || chat.UserSession.AppName != ChatGPTName || chat.UserSession.Status != 1 {
 			return
 		}
-		fmt.Println(ok, chat.UserSession.AppName, chat.UserSession.Status)
 		ans, err := chat.ChatGPT.Chat(cpf.Message)
 		if err != nil {
 			switch {
