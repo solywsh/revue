@@ -16,7 +16,7 @@ require (
 
 require (
 	github.com/satori/go.uuid v1.2.0
-	github.com/solywsh/chatgpt v0.0.8
+	github.com/solywsh/chatgpt v0.0.11
 )
 
 require (

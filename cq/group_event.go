@@ -2,8 +2,6 @@ package cq
 
 import (
 	"github.com/go-resty/resty/v2"
-	cmap "github.com/orcaman/concurrent-map/v2"
-	"github.com/solywsh/chatgpt"
 	"github.com/solywsh/qqBot-revue/db"
 	"github.com/solywsh/qqBot-revue/mongo_service"
 	"github.com/thedevsaddam/gojsonq"
@@ -210,99 +208,5 @@ func (cpf *PostForm) GroupEvent() {
 			cpf.AutoGroupMsg()
 		}
 
-	}
-}
-
-const ChatGPTName = "chat_gpt"
-
-var (
-	chatMap = cmap.New[*Chat]()
-)
-
-type Chat struct {
-	ChatGPT     *chatgpt.ChatGPT
-	UserSession *db.UserSession
-}
-
-// ChatGPTEvent status = 1 初始化，status = 2 判断/响应 status = 3 结束
-func (cpf *PostForm) ChatGPTEvent(status int) {
-	switch status {
-	case 1:
-		userSession, err := gdb.FindOrCreateUserSession(strconv.Itoa(cpf.UserId), ChatGPTName)
-		if err != nil {
-			cpf.SendMsg("发生错误" + err.Error())
-			return
-		}
-		userSession.Status = 1 // 激活状态
-		userSession.UpdateTime = time.Now()
-		ok, err := gdb.UpdateUserSessionMany(userSession, true)
-		if err != nil || !ok {
-			cpf.SendMsg("发生错误" + err.Error())
-			return
-		}
-		chatMap.Set(strconv.Itoa(cpf.UserId), &Chat{
-			ChatGPT:     chatgpt.New(yamlConf.ChatGPT.ApiKey, strconv.Itoa(cpf.UserId), time.Minute*10),
-			UserSession: &userSession,
-		})
-		go func() {
-			if v, ok := chatMap.Get(strconv.Itoa(cpf.UserId)); ok {
-				select {
-				case <-v.ChatGPT.GetTimeOutChan():
-					cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 结束与你的对话")
-					chatMap.Remove(strconv.Itoa(cpf.UserId))
-				}
-			}
-
-		}()
-		cpf.SendMsg("请说")
-	case 2:
-		chat, ok := chatMap.Get(strconv.Itoa(cpf.UserId))
-		if !ok || chat.UserSession.AppName != ChatGPTName || chat.UserSession.Status != 1 {
-			return
-		}
-		ans, err := chat.ChatGPT.Chat(cpf.Message)
-		if err != nil {
-			switch {
-			case strings.Contains(err.Error(), "Timeout"):
-				cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 回答超时")
-			case strings.Contains(err.Error(), "context canceled"):
-				cpf.SendMsg(GetCqCodeAt(strconv.Itoa(cpf.UserId), "") + " 对话已关闭")
-			default:
-				cpf.SendMsg("未知错误" + err.Error())
-			}
-			return
-		}
-		chat.UserSession.UpdateTime = time.Now()
-		for len(ans) > 0 {
-			if ans[0] == '\n' ||
-				ans[0] == ' ' ||
-				ans[0] == '\t' ||
-				ans[0] == '\r' ||
-				ans[0] == '?' ||
-				ans[0] == '.' ||
-				ans[0] == '!' {
-				ans = ans[1:]
-			} else if len(ans) >= 2 && ans[:2] == "？" {
-				ans = ans[2:]
-			} else {
-				break
-			}
-		}
-		cpf.SendMsg(ans)
-	case 3:
-		chat, ok := chatMap.Get(strconv.Itoa(cpf.UserId))
-		if !ok || chat.UserSession.AppName != ChatGPTName || chat.UserSession.Status != 1 {
-			return
-		}
-		chat.UserSession.Status = 2 // 关闭状态
-		chat.UserSession.UpdateTime = time.Now()
-		ok, err := gdb.UpdateUserSessionMany(*chat.UserSession, true)
-		if err != nil || !ok {
-			cpf.SendMsg("发生错误" + err.Error())
-			return
-		}
-		if v, ok := chatMap.Get(strconv.Itoa(cpf.UserId)); ok {
-			v.ChatGPT.Close()
-		}
 	}
 }

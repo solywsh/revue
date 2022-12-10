@@ -38,6 +38,7 @@ func (m *Mongo) GetLoLiCon(r18 bool) (*LoliconData, error) {
 	aggregate, err := DbCollection.Aggregate(context.TODO(), []bson.M{
 		{"$match": bson.M{"r18": r18}}, {"$sample": bson.M{"size": 1}},
 	})
+
 	if err != nil {
 		log.Println("Error", err)
 		return nil, err
